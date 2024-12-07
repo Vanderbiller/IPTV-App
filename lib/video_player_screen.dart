@@ -1,76 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
+import 'package:flutter/services.dart';
 
-class VideoPlayerScreen extends StatefulWidget {
-  final String channelName;
+class VideoPlayerPage extends StatefulWidget {
   final String channelUrl;
-
-  const VideoPlayerScreen({
-    super.key,
-    required this.channelName,
-    required this.channelUrl,
-  });
+  const VideoPlayerPage({super.key, required this.channelUrl});
 
   @override
-  VideoPlayerScreenState createState() => VideoPlayerScreenState();
+VideoPlayerPageState createState() => VideoPlayerPageState();
 }
 
-class VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  late VideoPlayerController _videoPlayerController;
-  ChewieController? _chewieController;
+class VideoPlayerPageState extends State<VideoPlayerPage> {
+  static const platform = MethodChannel('video_player_channel');
 
-  @override
-  void initState() {
-    super.initState();
-
-    _videoPlayerController =
-        VideoPlayerController.networkUrl(Uri.parse(widget.channelUrl))
-          ..initialize().then((_) {
-            setState(() {
-              _chewieController = ChewieController(
-                videoPlayerController: _videoPlayerController,
-                autoPlay: false,
-                looping: true,
-                fullScreenByDefault: true,
-                aspectRatio: _videoPlayerController.value.aspectRatio,
-                controlsSafeAreaMinimum: EdgeInsets.zero,
-                isLive: true,
-                zoomAndPan: true,
-              );
-            });
-          }).catchError((error) {
-            print(error);
-          });
+  Future<void> _playVideo(String videoUrl) async {
+    try {
+      await platform.invokeMethod('playVideo', {
+        'url': videoUrl,
+      });
+    } on PlatformException catch (e) {
+      print("Failed to play video: '${e.message}'.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to play video: ${e.message}')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Video Demo',
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.channelName),
-          leading: IconButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              icon: const Icon(Icons.arrow_back_sharp)),
-        ),
-        body: Center(
-          child: _chewieController != null &&
-                  _chewieController!.videoPlayerController.value.isInitialized
-              ? Chewie(controller: _chewieController!)
-              : const CircularProgressIndicator(),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Video Player'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            _playVideo(widget.channelUrl);
+          },
+          child: const Text('Play Video'),
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _videoPlayerController.dispose();
-    _chewieController?.dispose();
-    super.dispose();
   }
 }

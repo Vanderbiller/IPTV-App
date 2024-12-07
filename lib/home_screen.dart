@@ -110,8 +110,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => VideoPlayerScreen(
-                                          channelName: channel.name,
+                                        builder: (context) => VideoPlayerPage(
                                           channelUrl: channel.url,
                                         ),
                                       ),
