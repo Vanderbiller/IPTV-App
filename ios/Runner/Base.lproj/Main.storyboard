@@ -4,6 +4,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -19,15 +20,54 @@
                     <view key="view" contentMode="scaleToFill" id="MI6-Ce-sLJ">
                         <rect key="frame" x="0.0" y="0.0" width="852" height="393"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Timer" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="zHO-Qy-M1C">
+                                <rect key="frame" x="57" y="343" width="44" height="21"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Timer" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dFm-V9-9g5">
+                                <rect key="frame" x="752" y="343" width="44" height="21"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="xAI-VQ-W5z">
+                                <rect key="frame" x="107" y="343" width="639" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            </slider>
+                            <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="iOx-5A-elz">
+                                <rect key="frame" x="416.33333333333331" y="186.33333333333334" width="19.333333333333314" height="20.333333333333343"/>
+                                <subviews>
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="o0h-2K-GDS">
+                                        <rect key="frame" x="0.0" y="-0.66666666666666785" width="19.333333333333332" height="22"/>
+                                        <color key="tintColor" systemColor="linkColor"/>
+                                        <imageReference key="image" image="play.fill" catalog="system" symbolScale="large"/>
+                                    </imageView>
+                                </subviews>
+                            </stackView>
+                        </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="iOx-5A-elz" firstAttribute="centerY" secondItem="MI6-Ce-sLJ" secondAttribute="centerY" id="QOg-e8-3d7"/>
+                            <constraint firstItem="iOx-5A-elz" firstAttribute="centerX" secondItem="MI6-Ce-sLJ" secondAttribute="centerX" id="Y7a-qz-T1i"/>
+                        </constraints>
                     </view>
                     <connections>
+                        <outlet property="imgPlay" destination="o0h-2K-GDS" id="Zlr-J5-Bu0"/>
+                        <outlet property="lbCurrTime" destination="zHO-Qy-M1C" id="Xuy-bn-CMz"/>
+                        <outlet property="lbTotalTime" destination="dFm-V9-9g5" id="718-k2-blP"/>
+                        <outlet property="seekSlider" destination="xAI-VQ-W5z" id="g7x-S7-Awu"/>
+                        <outlet property="stackView" destination="iOx-5A-elz" id="X2a-K6-G0I"/>
                         <outlet property="videoPlayer" destination="MI6-Ce-sLJ" id="6Oj-gn-KFb"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="GsG-lR-3ME" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-833" y="-24"/>
+            <point key="canvasLocation" x="-833.09859154929586" y="-25.190839694656489"/>
         </scene>
         <!--Flutter View Controller-->
         <scene sceneID="tne-QT-ifu">
@@ -49,6 +89,10 @@
         </scene>
     </scenes>
     <resources>
+        <image name="play.fill" catalog="system" width="120" height="128"/>
+        <systemColor name="linkColor">
+            <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
