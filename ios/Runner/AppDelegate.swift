@@ -43,16 +43,21 @@ import MobileVLCKit
     }
 
     private func presentVideoPlayer(with url: URL) {
-        guard let rootViewController = UIApplication.shared.windows.first?.rootViewController else {
+        // Get the first active window scene
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
             print("No root view controller found")
             return
         }
 
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         guard let videoPlayerVC = storyboard.instantiateViewController(withIdentifier: "ViewController") as? ViewController else {
+            print("Could not instantiate ViewController from storyboard.")
             return
         }
+
         videoPlayerVC.configure(with: url)
+        videoPlayerVC.modalPresentationStyle = .fullScreen  // Force full-screen presentation
         rootViewController.present(videoPlayerVC, animated: true, completion: nil)
     }
 }
