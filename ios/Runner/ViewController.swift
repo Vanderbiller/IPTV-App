@@ -1,18 +1,34 @@
 import UIKit
 import MobileVLCKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, VLCMediaPlayerDelegate {
 
     @IBOutlet weak var videoPlayer: UIView!
-    @IBOutlet weak var stackView: UIStackView!
-    @IBOutlet weak var imgPlay: UIImageView!
-    @IBOutlet weak var lbCurrTime: UILabel!
+    @IBOutlet weak var UIView: UIView!
     @IBOutlet weak var lbTotalTime: UILabel!
     @IBOutlet weak var seekSlider: UISlider!
-
+    @IBOutlet weak var imgPlay: UIImageView! {
+        didSet {
+            self.imgPlay.isUserInteractionEnabled = true
+            self.imgPlay.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(onTapPlayPause)))
+        }
+    }
+    
+    @IBOutlet weak var imgClose: UIImageView! {
+        didSet {
+            self.imgClose.isUserInteractionEnabled = true
+            self.imgClose.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(onTapClose)))
+        }
+    }
+    
+    @IBOutlet weak var imgCast: UIImageView!
+    
     private var mediaPlayer: VLCMediaPlayer?
     private var videoURL: URL?
-
+    private var initialLoad: Bool = false
+    private var isLiveStream: Bool?
+    private var updateTimer: Timer?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupPlayer()
@@ -40,20 +56,70 @@ class ViewController: UIViewController {
     private func setupPlayer() {
         guard let url = videoURL else { return }
 
-        // Initialize VLCMediaPlayer
         mediaPlayer = VLCMediaPlayer()
         mediaPlayer?.media = VLCMedia(url: url)
         
-        let videoLayer = CALayer()
-        videoLayer.frame = videoPlayer.bounds
-        videoLayer.contentsGravity = .resizeAspectFill
-        videoPlayer.layer.addSublayer(videoLayer)
         mediaPlayer?.drawable = videoPlayer
-
-        // Start playback
-        mediaPlayer?.play()
-        bringControlsToFront()
+        videoPlayer.backgroundColor = .black
         
+        mediaPlayer?.delegate = self
+        mediaPlayer?.play()
+    }
+    
+    
+    // MARK: - Make sure the video is playing
+    
+    func mediaPlayerStateChanged(_ aNotification: Notification) {
+        if (mediaPlayer?.state == .playing && !initialLoad) {
+            initialLoad = true
+            let totalTime = mediaPlayer?.media?.length
+            if let totalTime = totalTime, totalTime.intValue == 0 {
+                lbTotalTime.text = " Live •"
+                lbTotalTime.backgroundColor = .red
+                lbTotalTime.textColor = .white
+                lbTotalTime.layer.cornerRadius = 8
+                lbTotalTime.clipsToBounds = true
+                lbTotalTime.font = UIFont.boldSystemFont(ofSize: 14)
+                seekSlider.isEnabled = false
+                seekSlider.value = seekSlider.maximumValue
+            }
+            else {
+                updateTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateUI), userInfo: nil, repeats: true)
+            }
+            
+        }
+    }
+    
+    // MARK: - Slider handling
+    
+    @objc private func updateUI() {
+        guard let mediaPlayer = mediaPlayer else { return }
+        
+        //Remaining Time
+        let totalTime = mediaPlayer.media?.length.intValue ?? 0
+        let currentTime = mediaPlayer.time.intValue
+        
+        let remainingTime = totalTime - currentTime
+        
+        //Update Slider and Timer
+        lbTotalTime.text = formatTime(Int(remainingTime))
+        seekSlider.value = Float(currentTime)
+        seekSlider.maximumValue = Float(totalTime)
+    }
+    
+    private func formatTime(_ timeInMs: Int) -> String {
+        let time = timeInMs / 1000
+        let hours = time / 3600
+        let minutes = (time % 3600) / 60
+        let seconds = time % 60
+        
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        } else if minutes > 0 {
+            return String(format: "%02d:%02d", minutes, seconds)
+        } else {
+            return String(format: "%02d", seconds)
+        }
     }
     
     // MARK: - Device Orientation Handling
@@ -80,15 +146,6 @@ class ViewController: UIViewController {
         return true
     }
 
-    private func bringControlsToFront() {
-        // Bring all UI elements to the front
-        view.bringSubviewToFront(stackView)
-        view.bringSubviewToFront(imgPlay)
-        view.bringSubviewToFront(lbCurrTime)
-        view.bringSubviewToFront(lbTotalTime)
-        view.bringSubviewToFront(seekSlider)
-    }
-    
     // MARK: - Notification Observers for System Gestures
 
     private func addNotificationObservers() {
@@ -114,6 +171,25 @@ class ViewController: UIViewController {
     @objc private func handleAppWillResignActive() {
         // Pause playback when app resigns active
         mediaPlayer?.pause()
+    }
+    
+    // MARK: - UI Controls
+    
+    @objc private func onTapPlayPause() {
+        if mediaPlayer?.isPlaying == true {
+            mediaPlayer?.pause()
+            imgPlay.image = UIImage(systemName: "play.fill")
+        }
+        else {
+            mediaPlayer?.play()
+            imgPlay.image = UIImage(systemName: "pause.fill")
+        }
+    }
+    
+    @objc private func onTapClose() {
+        mediaPlayer?.stop()
+        mediaPlayer = nil
+        self.dismiss(animated: true, completion: nil)
     }
     
     // MARK: - Cleanup
