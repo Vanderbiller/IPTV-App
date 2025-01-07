@@ -4,9 +4,10 @@ import MobileVLCKit
 class ViewController: UIViewController, VLCMediaPlayerDelegate {
 
     @IBOutlet weak var videoPlayer: UIView!
-    @IBOutlet weak var UIView: UIView!
+    @IBOutlet weak var controlView: UIView!
     @IBOutlet weak var lbTotalTime: UILabel!
     @IBOutlet weak var seekSlider: UISlider!
+    
     @IBOutlet weak var imgPlay: UIImageView! {
         didSet {
             self.imgPlay.isUserInteractionEnabled = true
@@ -28,6 +29,7 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
     private var initialLoad: Bool = false
     private var isLiveStream: Bool?
     private var updateTimer: Timer?
+    private var isControlsVisible: Bool = true
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -75,16 +77,17 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
             let totalTime = mediaPlayer?.media?.length
             if let totalTime = totalTime, totalTime.intValue == 0 {
                 lbTotalTime.text = " Live •"
+                lbTotalTime.textAlignment = .center
                 lbTotalTime.backgroundColor = .red
                 lbTotalTime.textColor = .white
                 lbTotalTime.layer.cornerRadius = 8
                 lbTotalTime.clipsToBounds = true
                 lbTotalTime.font = UIFont.boldSystemFont(ofSize: 14)
                 seekSlider.isEnabled = false
-                seekSlider.value = seekSlider.maximumValue
+                seekSlider.isHidden = true
             }
             else {
-                updateTimer = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(updateUI), userInfo: nil, repeats: true)
+                updateTimer = Timer.scheduledTimer(timeInterval: 0.2, target: self, selector: #selector(updateUI), userInfo: nil, repeats: true)
             }
             
         }
@@ -103,8 +106,25 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         
         //Update Slider and Timer
         lbTotalTime.text = formatTime(Int(remainingTime))
-        seekSlider.value = Float(currentTime)
-        seekSlider.maximumValue = Float(totalTime)
+        
+        //Only update slider if user isnt interacting with it
+        
+        if !seekSlider.isTracking {
+            seekSlider.value = Float(currentTime)
+            seekSlider.maximumValue = Float(totalTime)
+        }
+    }
+        
+    @IBAction func sliderTouchEnded(_ sender: UISlider) {
+        guard let mediaPlayer = mediaPlayer else { return }
+        
+        let newTime = Int32(sender.value)
+        mediaPlayer.time = VLCTime(int: newTime)
+        seekSlider.value = Float(newTime)
+        
+        if mediaPlayer.state == .paused {
+            mediaPlayer.play()
+        }
     }
     
     private func formatTime(_ timeInMs: Int) -> String {
