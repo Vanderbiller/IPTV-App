@@ -38,6 +38,7 @@
                                         <color key="thumbTintColor" systemColor="systemOrangeColor"/>
                                         <connections>
                                             <action selector="sliderTouchEnded:" destination="hwC-ay-7Tr" eventType="valueChanged" id="ZM6-E0-KbE"/>
+                                            <action selector="sliderValueChanged:" destination="hwC-ay-7Tr" eventType="touchUpInside" id="hoe-i5-v05"/>
                                         </connections>
                                     </slider>
                                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="o0h-2K-GDS">
