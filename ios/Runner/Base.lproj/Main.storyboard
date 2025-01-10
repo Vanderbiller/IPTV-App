@@ -37,7 +37,10 @@
                                         <color key="minimumTrackTintColor" systemColor="systemOrangeColor"/>
                                         <color key="thumbTintColor" systemColor="systemOrangeColor"/>
                                         <connections>
-                                            <action selector="sliderTouchEnded:" destination="hwC-ay-7Tr" eventType="valueChanged" id="ZM6-E0-KbE"/>
+                                            <action selector="sliderTouchEnded:" destination="hwC-ay-7Tr" eventType="touchUpOutside" id="ZP5-NT-Xix"/>
+                                            <action selector="sliderTouchEnded:" destination="hwC-ay-7Tr" eventType="touchUpInside" id="xKC-AN-7DA"/>
+                                            <action selector="sliderTouchStarted:" destination="hwC-ay-7Tr" eventType="touchDown" id="65h-BD-ycd"/>
+                                            <action selector="sliderValueChanged:" destination="hwC-ay-7Tr" eventType="valueChanged" id="PSy-Pz-5Y9"/>
                                         </connections>
                                     </slider>
                                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="o0h-2K-GDS">

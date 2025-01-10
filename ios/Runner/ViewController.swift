@@ -3,8 +3,20 @@ import MobileVLCKit
 
 class ViewController: UIViewController, VLCMediaPlayerDelegate {
 
-    @IBOutlet weak var videoPlayer: UIView!
-    @IBOutlet weak var controlView: UIView!
+    @IBOutlet weak var videoPlayer: UIView! {
+        didSet {
+            self.videoPlayer.isUserInteractionEnabled = true
+            self.videoPlayer.addGestureRecognizer(UITapGestureRecognizer(target:self, action: #selector(onScreenTap)))
+        }
+    }
+    
+    @IBOutlet weak var controlView: UIView! {
+        didSet {
+            self.controlView.isUserInteractionEnabled = true
+            self.controlView.addGestureRecognizer(UITapGestureRecognizer(target:self, action: #selector(onScreenTap)))
+        }
+    }
+    
     @IBOutlet weak var lbTotalTime: UILabel!
     @IBOutlet weak var seekSlider: UISlider!
     
@@ -30,6 +42,7 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
     private var isLiveStream: Bool?
     private var updateTimer: Timer?
     private var isControlsVisible: Bool = true
+    private var uiTimer: Timer?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -89,12 +102,57 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
             else {
                 updateTimer = Timer.scheduledTimer(timeInterval: 0.2, target: self, selector: #selector(updateUI), userInfo: nil, repeats: true)
             }
-            
+        }
+        
+        if (mediaPlayer?.state == .playing) {
+            startUITimer()
+        } else if (mediaPlayer?.state == .paused || mediaPlayer?.state == .stopped) {
+            uiTimer?.invalidate()
         }
     }
     
-    // MARK: - Slider handling
+    // MARK: - Hide Controls UI with Timeout
     
+    private func startUITimer() {
+        uiTimer?.invalidate()
+        uiTimer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(hideControls), userInfo: nil, repeats: false)
+    }
+    
+    @objc private func onScreenTap() {
+        if isControlsVisible {
+            hideControls()
+        } else {
+            showControls()
+        }
+    }
+    
+    // Function for when sliding, the UI wont disappear
+    @IBAction func sliderTouchStarted(_ sender: Any) {
+        uiTimer?.invalidate()
+    }
+    
+    @IBAction func sliderTouchEnded(_ sender: Any) {
+        startUITimer()
+    }
+    
+    @objc private func hideControls() {
+        uiTimer?.invalidate()
+        isControlsVisible = false
+        UIView.animate(withDuration: 0.3) { [weak self] in
+            self?.controlView.alpha = 0.0
+        }
+    }
+    
+    private func showControls() {
+        isControlsVisible = true
+        UIView.animate(withDuration: 0.3) { [weak self] in
+            self?.controlView.alpha = 1.0
+        }
+        startUITimer()
+    }
+    
+    
+    // MARK: - Slider handling
     @objc private func updateUI() {
         guard let mediaPlayer = mediaPlayer else { return }
         
@@ -115,7 +173,7 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         }
     }
         
-    @IBAction func sliderTouchEnded(_ sender: UISlider) {
+    @IBAction func sliderValueChanged(_ sender: UISlider) {
         guard let mediaPlayer = mediaPlayer else { return }
         
         let newTime = Int32(sender.value)
@@ -218,5 +276,9 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         NotificationCenter.default.removeObserver(self)
         mediaPlayer?.stop()
         mediaPlayer = nil
+        updateTimer?.invalidate()
+        updateTimer = nil
+        uiTimer?.invalidate()
+        uiTimer = nil
     }
 }
