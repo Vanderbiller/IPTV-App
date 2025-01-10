@@ -119,7 +119,6 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
     }
     
     @objc private func onScreenTap() {
-        print("entered")
         if isControlsVisible {
             hideControls()
         } else {
@@ -128,8 +127,12 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
     }
     
     // Function for when sliding, the UI wont disappear
-    @IBAction func sliderValueChanged(_ sender: Any) {
+    @IBAction func sliderTouchStarted(_ sender: Any) {
         uiTimer?.invalidate()
+    }
+    
+    @IBAction func sliderTouchEnded(_ sender: Any) {
+        startUITimer()
     }
     
     @objc private func hideControls() {
@@ -170,7 +173,7 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         }
     }
         
-    @IBAction func sliderTouchEnded(_ sender: UISlider) {
+    @IBAction func sliderValueChanged(_ sender: UISlider) {
         guard let mediaPlayer = mediaPlayer else { return }
         
         let newTime = Int32(sender.value)
@@ -180,8 +183,6 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         if mediaPlayer.state == .paused {
             mediaPlayer.play()
         }
-        
-        startUITimer()
     }
     
     private func formatTime(_ timeInMs: Int) -> String {
