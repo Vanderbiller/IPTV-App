@@ -18,7 +18,15 @@ class Channel {
 class M3UParser {
   Future<Map<String?, List<Channel>>> parseM3U(String url) async {
     final client = http.Client();
-    final request = http.Request('GET', Uri.parse(url));
+        // Ensure URL uses type=m3u_plus and output=ts
+    Uri uri = Uri.parse(url);
+    final params = Map<String, String>.from(uri.queryParameters);
+    if (params['type'] != 'm3u_plus' || params['output'] != 'm3u8') {
+      params['type'] = 'm3u_plus';
+      params['output'] = 'm3u8';
+      uri = uri.replace(queryParameters: params);
+    }
+    final request = http.Request('GET', uri);
     final res = await client.send(request);
 
     if (res.statusCode == 200) {

@@ -1,63 +1,43 @@
 import UIKit
 import Flutter
-import MobileVLCKit
+import AVKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
-    private var mediaPlayer: VLCMediaPlayer?
-    private var videoViewController: UIViewController?
+  override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    GeneratedPluginRegistrant.register(with: self)
 
-    override func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-    ) -> Bool {
-        GeneratedPluginRegistrant.register(with: self)
-
-        // Set up MethodChannel
-        guard let controller = window?.rootViewController as? FlutterViewController else {
-            return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-        }
-
-        let videoPlayerChannel = FlutterMethodChannel(
-            name: "video_player_channel",
-            binaryMessenger: controller.binaryMessenger
-        )
-
-        // Handle method calls
-        videoPlayerChannel.setMethodCallHandler { [weak self] (call, result) in
-            if call.method == "playVideo" {
-                guard let args = call.arguments as? [String: Any],
-                      let urlString = args["url"] as? String,
-                      let url = URL(string: urlString) else {
-                    result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid or missing URL", details: nil))
-                    return
-                }
-                self?.presentVideoPlayer(with: url)
-                result(nil)
-            } else {
-                result(FlutterMethodNotImplemented)
-            }
-        }
-
-        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    guard let controller = window?.rootViewController as? FlutterViewController else {
+      return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 
-    private func presentVideoPlayer(with url: URL) {
-        // Get the first active window scene
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
-            print("No root view controller found")
-            return
-        }
+    let videoPlayerChannel = FlutterMethodChannel(
+      name: "video_player_channel",
+      binaryMessenger: controller.binaryMessenger
+    )
 
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        guard let videoPlayerVC = storyboard.instantiateViewController(withIdentifier: "ViewController") as? ViewController else {
-            print("Could not instantiate ViewController from storyboard.")
-            return
-        }
+    videoPlayerChannel.setMethodCallHandler { [weak controller] (call, result) in
+      if call.method == "playVideo",
+         let args = call.arguments as? [String: Any],
+         let urlString = args["url"] as? String,
+         let url = URL(string: urlString) {
 
-        videoPlayerVC.configure(with: url)
-        videoPlayerVC.modalPresentationStyle = .fullScreen  // Force full-screen presentation
-        rootViewController.present(videoPlayerVC, animated: true, completion: nil)
+        // Present AVPlayerViewController
+        let playerVC = AVPlayerViewController()
+        playerVC.player = AVPlayer(url: url)
+        controller?.present(playerVC, animated: true) {
+          playerVC.player?.play()
+        }
+        result(nil)
+
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
     }
+
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
 }
