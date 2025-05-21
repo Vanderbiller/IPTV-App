@@ -33,6 +33,7 @@ target 'Runner' do
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   pod 'MobileVLCKit'
+  pod 'google-cast-sdk', '~> 4.8.3'
   target 'RunnerTests' do
     inherit! :search_paths
   end

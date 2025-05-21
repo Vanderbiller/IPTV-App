@@ -1,11 +1,14 @@
 PODS:
   - Flutter (1.0.0)
+  - google-cast-sdk (4.8.3):
+    - Protobuf (~> 3.13)
   - MobileVLCKit (3.6.0)
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - Protobuf (3.29.4)
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
@@ -17,6 +20,7 @@ PODS:
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
+  - google-cast-sdk (~> 4.8.3)
   - MobileVLCKit
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
@@ -26,7 +30,9 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
+    - google-cast-sdk
     - MobileVLCKit
+    - Protobuf
 
 EXTERNAL SOURCES:
   Flutter:
@@ -44,13 +50,15 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  google-cast-sdk: 1fb6724e94cc5ff23b359176e0cf6360586bb97a
   MobileVLCKit: 8fe98ae53b7464f32e4bdf527cc7d53053e4d3a5
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  Protobuf: 2e6de032ba12b9efb390ae550d1a243a5b19ddfc
   sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
   video_player_avfoundation: 7c6c11d8470e1675df7397027218274b6d2360b3
   wakelock_plus: 78ec7c5b202cab7761af8e2b2b3d0671be6c4ae1
 
-PODFILE CHECKSUM: 9a1f056dddf77ddecd3d2613167a643d3f58ad17
+PODFILE CHECKSUM: c73a0e1de3564776ee0913c38375bff1de365343
 
 COCOAPODS: 1.16.2
