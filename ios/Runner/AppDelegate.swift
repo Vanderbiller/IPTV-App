@@ -1,6 +1,7 @@
-import UIKit
 import Flutter
+import GoogleCast
 import MobileVLCKit
+import UIKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -18,6 +19,9 @@ import MobileVLCKit
             return super.application(application, didFinishLaunchingWithOptions: launchOptions)
         }
 
+        let options = GCKCastOptions(discoveryCriteria: GCKDiscoveryCriteria(applicationID: kGCKDefaultMediaReceiverApplicationID))
+        GCKCastContext.setSharedInstanceWith(options)
+        
         let videoPlayerChannel = FlutterMethodChannel(
             name: "video_player_channel",
             binaryMessenger: controller.binaryMessenger
@@ -27,9 +31,13 @@ import MobileVLCKit
         videoPlayerChannel.setMethodCallHandler { [weak self] (call, result) in
             if call.method == "playVideo" {
                 guard let args = call.arguments as? [String: Any],
-                      let urlString = args["url"] as? String,
-                      let url = URL(string: urlString) else {
-                    result(FlutterError(code: "INVALID_ARGUMENT", message: "Invalid or missing URL", details: nil))
+                    let urlString = args["url"] as? String,
+                    let url = URL(string: urlString)
+                else {
+                    result(
+                        FlutterError(
+                            code: "INVALID_ARGUMENT", message: "Invalid or missing URL",
+                            details: nil))
                     return
                 }
                 self?.presentVideoPlayer(with: url)
@@ -45,13 +53,17 @@ import MobileVLCKit
     private func presentVideoPlayer(with url: URL) {
         // Get the first active window scene
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
+            let rootViewController = windowScene.windows.first?.rootViewController
+        else {
             print("No root view controller found")
             return
         }
 
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        guard let videoPlayerVC = storyboard.instantiateViewController(withIdentifier: "ViewController") as? ViewController else {
+        guard
+            let videoPlayerVC = storyboard.instantiateViewController(
+                withIdentifier: "ViewController") as? ViewController
+        else {
             print("Could not instantiate ViewController from storyboard.")
             return
         }

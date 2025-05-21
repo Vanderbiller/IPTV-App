@@ -1,7 +1,10 @@
 import UIKit
 import MobileVLCKit
+import GoogleCast
 
-class ViewController: UIViewController, VLCMediaPlayerDelegate {
+class ViewController: UIViewController, VLCMediaPlayerDelegate, GCKSessionManagerListener {
+
+    private var castButton: GCKUICastButton!
 
     @IBOutlet weak var videoPlayer: UIView! {
         didSet {
@@ -34,7 +37,6 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         }
     }
     
-    @IBOutlet weak var imgCast: UIImageView!
     
     private var mediaPlayer: VLCMediaPlayer?
     private var videoURL: URL?
@@ -48,6 +50,19 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         super.viewDidLoad()
         setupPlayer()
         addNotificationObservers()
+        // Register for Cast session events
+        GCKCastContext.sharedInstance().sessionManager.add(self)
+        // Add Google Cast button in top-right
+        castButton = GCKUICastButton(frame: .zero)
+        castButton.translatesAutoresizingMaskIntoConstraints = false
+        castButton.tintColor = UIColor.white
+        view.addSubview(castButton)
+        NSLayoutConstraint.activate([
+            castButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            castButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            castButton.widthAnchor.constraint(equalToConstant: 24),
+            castButton.heightAnchor.constraint(equalToConstant: 24)
+        ])
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -140,6 +155,7 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         isControlsVisible = false
         UIView.animate(withDuration: 0.3) { [weak self] in
             self?.controlView.alpha = 0.0
+            self?.castButton.alpha = 0.0
         }
     }
     
@@ -147,6 +163,7 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         isControlsVisible = true
         UIView.animate(withDuration: 0.3) { [weak self] in
             self?.controlView.alpha = 1.0
+            self?.castButton.alpha = 1.0
         }
         startUITimer()
     }
@@ -270,6 +287,71 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
         self.dismiss(animated: true, completion: nil)
     }
     
+    
+    // MARK: - Casting
+    
+    private func startCast(title: String) {
+        guard
+            let url = videoURL,
+            let session = GCKCastContext.sharedInstance().sessionManager.currentCastSession,
+            let mediaClient = session.remoteMediaClient
+        else {
+            return
+        }
+
+        let metadata = GCKMediaMetadata(metadataType: .movie)
+        metadata.setString(title, forKey: kGCKMetadataKeyTitle)
+
+        let mediaInfoBuilder = GCKMediaInformationBuilder(contentID: url.absoluteString)
+        mediaInfoBuilder.contentType = "application/vnd.apple.mpegurl"
+        if let lengthMs = mediaPlayer?.media?.length.intValue, lengthMs > 0 {
+            mediaInfoBuilder.streamType = .buffered
+            mediaInfoBuilder.streamDuration = Double(lengthMs) / 1000.0
+        } else {
+            mediaInfoBuilder.streamType = .live
+            mediaInfoBuilder.streamDuration = 0.0
+        }
+        mediaInfoBuilder.metadata = metadata
+        let mediaInfo = mediaInfoBuilder.build()
+
+        mediaClient.loadMedia(mediaInfo, autoplay: true)
+    }
+
+    private func loadMediaOnCastSession(_ session: GCKCastSession) {
+        guard let url = videoURL,
+              let mediaClient = session.remoteMediaClient else {
+            return
+        }
+        let metadata = GCKMediaMetadata(metadataType: .movie)
+        metadata.setString("Flutter IPTV Stream", forKey: kGCKMetadataKeyTitle)
+
+        let builder = GCKMediaInformationBuilder(contentID: url.absoluteString)
+        builder.contentType = "application/vnd.apple.mpegurl"
+        if let lengthMs = mediaPlayer?.media?.length.intValue, lengthMs > 0 {
+            builder.streamType = .buffered
+            builder.streamDuration = Double(lengthMs) / 1000.0
+        } else {
+            builder.streamType = .live
+            builder.streamDuration = 0.0
+        }
+        builder.metadata = metadata
+        let mediaInfo = builder.build()
+
+        mediaClient.loadMedia(mediaInfo, autoplay: true)
+    }
+
+
+    // MARK: - Google Cast Session Manager Listener
+    func sessionManager(_ sessionManager: GCKSessionManager, didStart session: GCKCastSession) {
+        // Send media once the Cast session starts
+        loadMediaOnCastSession(session)
+    }
+
+    func sessionManager(_ sessionManager: GCKSessionManager, didResume session: GCKCastSession) {
+        // Re-load media if reconnecting to an existing session
+        loadMediaOnCastSession(session)
+    }
+
     // MARK: - Cleanup
 
     deinit {
