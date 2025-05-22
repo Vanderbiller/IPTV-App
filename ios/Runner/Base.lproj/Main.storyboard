@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
     <device id="retina6_12" orientation="landscape" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
-        <capability name="Image references" minToolsVersion="12.0"/>
-        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23721"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -14,73 +12,91 @@
             <objects>
                 <viewController storyboardIdentifier="ViewController" id="hwC-ay-7Tr" customClass="ViewController" customModule="Runner" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
-                        <viewControllerLayoutGuide type="top" id="msd-SC-u4c"/>
-                        <viewControllerLayoutGuide type="bottom" id="0xZ-U8-BgR"/>
+                        <viewControllerLayoutGuide type="top" id="R7U-MX-dzG"/>
+                        <viewControllerLayoutGuide type="bottom" id="HVL-Mu-eDd"/>
                     </layoutGuides>
-                    <view key="view" contentMode="scaleToFill" id="eBl-M3-Yz8">
+                    <view key="view" contentMode="scaleToFill" id="YLK-wI-3gb">
                         <rect key="frame" x="0.0" y="0.0" width="852" height="393"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <view contentMode="scaleToFill" id="MI6-Ce-sLJ" userLabel="Video Player">
-                                <rect key="frame" x="0.0" y="0.0" width="852" height="393"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                            </view>
-                            <view contentMode="scaleToFill" id="rBk-Ra-Gsc" userLabel="Control View">
-                                <rect key="frame" x="0.0" y="0.0" width="852" height="393"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <subviews>
-                                    <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="xAI-VQ-W5z">
-                                        <rect key="frame" x="65" y="335" width="680" height="30"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <color key="tintColor" systemColor="systemPurpleColor"/>
-                                        <color key="minimumTrackTintColor" systemColor="systemOrangeColor"/>
-                                        <color key="thumbTintColor" systemColor="systemOrangeColor"/>
-                                        <connections>
-                                            <action selector="sliderTouchEnded:" destination="hwC-ay-7Tr" eventType="touchUpOutside" id="ZP5-NT-Xix"/>
-                                            <action selector="sliderTouchEnded:" destination="hwC-ay-7Tr" eventType="touchUpInside" id="xKC-AN-7DA"/>
-                                            <action selector="sliderTouchStarted:" destination="hwC-ay-7Tr" eventType="touchDown" id="65h-BD-ycd"/>
-                                            <action selector="sliderValueChanged:" destination="hwC-ay-7Tr" eventType="valueChanged" id="PSy-Pz-5Y9"/>
-                                        </connections>
-                                    </slider>
-                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="o0h-2K-GDS">
-                                        <rect key="frame" x="400" y="170.33333333333334" width="52" height="52"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        <imageReference key="image" image="pause.fill" catalog="system" symbolScale="large"/>
-                                    </imageView>
-                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="airplayvideo.circle.fill" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="ZIq-JS-T9p">
-                                        <rect key="frame" x="730" y="8.6666666666666572" width="86" height="41"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                    </imageView>
-                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="xmark" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="U0u-zZ-TJn">
-                                        <rect key="frame" x="52" y="17.666666666666657" width="52" height="24"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                    </imageView>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="00:00" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dFm-V9-9g5">
-                                        <rect key="frame" x="751" y="339" width="71" height="21"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                </subviews>
-                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                            </view>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" insetsLayoutMarginsFromSafeArea="NO" image="pause.fill" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="DUq-iI-rsK">
+                                <rect key="frame" x="408.66666666666669" y="181.33333333333334" width="35" height="30.666666666666657"/>
+                                <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="35" id="JeP-mW-Jb9"/>
+                                    <constraint firstAttribute="width" constant="35" id="f8W-lC-KGn"/>
+                                </constraints>
+                            </imageView>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" insetsLayoutMarginsFromSafeArea="NO" image="10.arrow.trianglehead.counterclockwise" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="ZwB-pV-ads">
+                                <rect key="frame" x="323.66666666666669" y="177.66666666666666" width="35" height="35.666666666666686"/>
+                                <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="35" id="BRs-ML-V7F"/>
+                                    <constraint firstAttribute="width" constant="35" id="DqH-AY-71O"/>
+                                </constraints>
+                            </imageView>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="xmark" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="A9s-eX-Sic">
+                                <rect key="frame" x="804.66666666666663" y="18.666666666666664" width="17.333333333333371" height="15.333333333333336"/>
+                                <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="20.329999999999998" id="j4L-tP-6Wb"/>
+                                    <constraint firstAttribute="width" constant="17.329999999999998" id="lIc-FZ-WhM"/>
+                                </constraints>
+                            </imageView>
+                            <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="b36-St-ext">
+                                <rect key="frame" x="26" y="337" width="749" height="31"/>
+                                <connections>
+                                    <action selector="sliderTouchEnded:" destination="hwC-ay-7Tr" eventType="touchUpInside" id="4Pl-qJ-ucN"/>
+                                    <action selector="sliderTouchEnded:" destination="hwC-ay-7Tr" eventType="touchUpOutside" id="b1W-xH-VeB"/>
+                                    <action selector="sliderTouchEnded:" destination="hwC-ay-7Tr" eventType="touchCancel" id="kph-Ss-hbS"/>
+                                    <action selector="sliderTouchStarted:" destination="hwC-ay-7Tr" eventType="touchDown" id="nja-Cj-LWN"/>
+                                    <action selector="sliderValueChanged:" destination="hwC-ay-7Tr" eventType="valueChanged" id="kJf-dB-jJy"/>
+                                </connections>
+                            </slider>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" insetsLayoutMarginsFromSafeArea="NO" image="10.arrow.trianglehead.clockwise" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="0h5-9B-81X">
+                                <rect key="frame" x="493.66666666666669" y="177.66666666666666" width="35.000000000000057" height="35.666666666666686"/>
+                                <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="35" id="Zu0-fI-jmL"/>
+                                    <constraint firstAttribute="width" constant="35" id="zSJ-eR-094"/>
+                                </constraints>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="0:00:00" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9tk-uT-ZC3">
+                                <rect key="frame" x="790" y="347" width="47" height="11"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="11" id="aRy-4a-U75"/>
+                                    <constraint firstAttribute="width" constant="47" id="lhT-NG-URi"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="10"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstAttribute="bottom" secondItem="9tk-uT-ZC3" secondAttribute="bottom" constant="35" id="4Vx-Mi-oHg"/>
+                            <constraint firstItem="9tk-uT-ZC3" firstAttribute="leading" secondItem="b36-St-ext" secondAttribute="trailing" constant="17" id="Abk-cf-rb0"/>
+                            <constraint firstAttribute="trailing" secondItem="9tk-uT-ZC3" secondAttribute="trailing" constant="15" id="Jha-KN-kdG"/>
+                            <constraint firstItem="A9s-eX-Sic" firstAttribute="top" secondItem="YLK-wI-3gb" secondAttribute="top" constant="16" id="MFj-4L-Jhm"/>
+                            <constraint firstAttribute="bottom" secondItem="b36-St-ext" secondAttribute="bottom" constant="26" id="Mep-Vk-gVY"/>
+                            <constraint firstItem="0h5-9B-81X" firstAttribute="centerY" secondItem="YLK-wI-3gb" secondAttribute="centerY" id="QY2-GN-KmO"/>
+                            <constraint firstItem="b36-St-ext" firstAttribute="leading" secondItem="YLK-wI-3gb" secondAttribute="leading" constant="28" id="aJ1-Bp-7gP"/>
+                            <constraint firstItem="DUq-iI-rsK" firstAttribute="centerY" secondItem="YLK-wI-3gb" secondAttribute="centerY" id="cNQ-eC-ubg"/>
+                            <constraint firstAttribute="trailing" secondItem="A9s-eX-Sic" secondAttribute="trailing" constant="30" id="feb-dx-aWy"/>
+                            <constraint firstItem="DUq-iI-rsK" firstAttribute="centerX" secondItem="YLK-wI-3gb" secondAttribute="centerX" id="iGv-1d-ehJ"/>
+                            <constraint firstItem="0h5-9B-81X" firstAttribute="leading" secondItem="DUq-iI-rsK" secondAttribute="trailing" constant="50" id="lGb-4e-SWS"/>
+                            <constraint firstItem="ZwB-pV-ads" firstAttribute="centerY" secondItem="YLK-wI-3gb" secondAttribute="centerY" id="nno-Lo-pCm"/>
+                            <constraint firstItem="DUq-iI-rsK" firstAttribute="leading" secondItem="ZwB-pV-ads" secondAttribute="trailing" constant="50" id="pLQ-xh-Sba"/>
+                        </constraints>
                     </view>
                     <connections>
-                        <outlet property="controlView" destination="rBk-Ra-Gsc" id="IU7-Wd-iEn"/>
-                        <outlet property="imgCast" destination="ZIq-JS-T9p" id="mad-Xs-soL"/>
-                        <outlet property="imgClose" destination="U0u-zZ-TJn" id="Yl5-ni-lmT"/>
-                        <outlet property="imgPlay" destination="o0h-2K-GDS" id="wQf-nS-GMX"/>
-                        <outlet property="lbTotalTime" destination="dFm-V9-9g5" id="IEO-Q7-6Ba"/>
-                        <outlet property="seekSlider" destination="xAI-VQ-W5z" id="SY1-YK-sAl"/>
-                        <outlet property="videoPlayer" destination="MI6-Ce-sLJ" id="ot2-xF-heJ"/>
+                        <outlet property="img10Back" destination="ZwB-pV-ads" id="ecl-uN-gWE"/>
+                        <outlet property="img10Fwd" destination="0h5-9B-81X" id="CbB-Mx-X1q"/>
+                        <outlet property="imgClose" destination="A9s-eX-Sic" id="oZV-nf-eCI"/>
+                        <outlet property="imgPause" destination="DUq-iI-rsK" id="LOZ-Ri-ui3"/>
+                        <outlet property="seekSlider" destination="b36-St-ext" id="uIb-PS-rtZ"/>
+                        <outlet property="timeLabel" destination="9tk-uT-ZC3" id="sJL-wx-ZXg"/>
+                        <outlet property="videoPlayer" destination="YLK-wI-3gb" id="QYB-BJ-b9A"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="GsG-lR-3ME" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -107,17 +123,9 @@
         </scene>
     </scenes>
     <resources>
-        <image name="airplayvideo.circle.fill" catalog="system" width="128" height="123"/>
+        <image name="10.arrow.trianglehead.clockwise" catalog="system" width="119" height="128"/>
+        <image name="10.arrow.trianglehead.counterclockwise" catalog="system" width="119" height="128"/>
         <image name="pause.fill" catalog="system" width="114" height="128"/>
         <image name="xmark" catalog="system" width="128" height="113"/>
-        <systemColor name="systemBackgroundColor">
-            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="systemOrangeColor">
-            <color red="1" green="0.58431372550000005" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
-        <systemColor name="systemPurpleColor">
-            <color red="0.68627450980000004" green="0.32156862749999998" blue="0.87058823529999996" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </systemColor>
     </resources>
 </document>

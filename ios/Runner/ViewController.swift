@@ -1,123 +1,142 @@
+
 import UIKit
-import MobileVLCKit
+import AVKit
+import AVFoundation
 
-class ViewController: UIViewController, VLCMediaPlayerDelegate {
 
-    @IBOutlet weak var videoPlayer: UIView! {
+class ViewController : UIViewController {
+    
+    private var isControlsVisible = true
+    private var uiTimer: Timer?
+    private var timeObserverToken: Any?
+    private var isObservingStatus = false
+    
+    @IBOutlet var videoPlayer: UIView!
+    @IBOutlet weak var imgPause: UIImageView! {
         didSet {
-            self.videoPlayer.isUserInteractionEnabled = true
-            self.videoPlayer.addGestureRecognizer(UITapGestureRecognizer(target:self, action: #selector(onScreenTap)))
+            self.imgPause.isUserInteractionEnabled = true
+            self.imgPause.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(togglePlayPause)))
         }
     }
     
-    @IBOutlet weak var controlView: UIView! {
+    @IBOutlet weak var img10Back: UIImageView! {
         didSet {
-            self.controlView.isUserInteractionEnabled = true
-            self.controlView.addGestureRecognizer(UITapGestureRecognizer(target:self, action: #selector(onScreenTap)))
+            self.img10Back.isUserInteractionEnabled = true
+            self.img10Back.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(backwardTenSeconds)))
         }
     }
-    
-    @IBOutlet weak var lbTotalTime: UILabel!
+    @IBOutlet weak var img10Fwd: UIImageView! {
+        didSet {
+            self.img10Fwd.isUserInteractionEnabled = true
+            self.img10Fwd.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(forwardTenSeconds)))
+        }
+    }
     @IBOutlet weak var seekSlider: UISlider!
-    
-    @IBOutlet weak var imgPlay: UIImageView! {
-        didSet {
-            self.imgPlay.isUserInteractionEnabled = true
-            self.imgPlay.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(onTapPlayPause)))
-        }
-    }
-    
+    @IBOutlet weak var timeLabel: UILabel!
     @IBOutlet weak var imgClose: UIImageView! {
         didSet {
             self.imgClose.isUserInteractionEnabled = true
-            self.imgClose.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(onTapClose)))
+            self.imgClose.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissPlayer)))
         }
     }
     
-    @IBOutlet weak var imgCast: UIImageView!
     
-    private var mediaPlayer: VLCMediaPlayer?
-    private var videoURL: URL?
-    private var initialLoad: Bool = false
-    private var isLiveStream: Bool?
-    private var updateTimer: Timer?
-    private var isControlsVisible: Bool = true
-    private var uiTimer: Timer?
+    private var player: AVPlayer?
+    private var playerLayer: AVPlayerLayer?
+    private var mediaUrl: URL?
+
+    private let liveLabel: UILabel = {
+        let label = UILabel()
+        label.text = "LIVE"
+        label.font = UIFont.boldSystemFont(ofSize: 12)
+        label.textColor = .white
+        label.backgroundColor = .red
+        label.textAlignment = .center
+        label.layer.cornerRadius = 10
+        label.layer.masksToBounds = true
+        label.isHidden = true
+        return label
+    }()
+    
+    func configure(with url: URL) {
+        mediaUrl = url
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupPlayer()
-        addNotificationObservers()
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        // Force landscape orientation
-        UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        
-        // Reset orientation to portrait when exiting
-        UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+        configureLiveLabel()
+        let tap = UITapGestureRecognizer(target: self, action: #selector(onScreenTap))
+        videoPlayer.isUserInteractionEnabled = true
+        videoPlayer.addGestureRecognizer(tap)
+        startUITimer()
+        seekSlider.minimumTrackTintColor = .white
+        seekSlider.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.3)
+        seekSlider.isContinuous = true
     }
 
-    func configure(with url: URL) {
-        self.videoURL = url
+    
+    private func configureLiveLabel() {
+        videoPlayer.addSubview(liveLabel)
+        liveLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            liveLabel.bottomAnchor.constraint(equalTo: videoPlayer.bottomAnchor, constant: -16),
+            liveLabel.leadingAnchor.constraint(equalTo: videoPlayer.leadingAnchor, constant: 16),
+            liveLabel.heightAnchor.constraint(equalToConstant: 20),
+            liveLabel.widthAnchor.constraint(equalToConstant: 50)
+        ])
     }
-
+    
     private func setupPlayer() {
-        guard let url = videoURL else { return }
+        guard let url = mediaUrl else {return}
+        player = AVPlayer(url: url)
+        player?.currentItem?.addObserver(self,
+                                         forKeyPath: "status",
+                                         options: [.initial, .new],
+                                         context: nil)
+        isObservingStatus = true
+        playerLayer = AVPlayerLayer(player: player)
+        playerLayer?.videoGravity = .resizeAspect
+        if let layer = playerLayer {
+            videoPlayer.layer.insertSublayer(layer, at: 0)
+        }
+        player?.play()
+        let interval = CMTime(seconds: 1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        timeObserverToken = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            guard let self = self,
+                  let currentItem = self.player?.currentItem,
+                  currentItem.duration.isNumeric else { return }
+            let duration = currentItem.duration.seconds
+            let current = time.seconds
+            let remaining = duration - current
 
-        mediaPlayer = VLCMediaPlayer()
-        mediaPlayer?.media = VLCMedia(url: url)
-        
-        mediaPlayer?.drawable = videoPlayer
-        videoPlayer.backgroundColor = .black
-        
-        mediaPlayer?.delegate = self
-        mediaPlayer?.play()
+            self.seekSlider.maximumValue = Float(duration)
+            self.seekSlider.value = Float(current)
+            self.timeLabel.text = self.formatTime(remaining)
+        }
+        startUITimer()
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        playerLayer?.frame = videoPlayer.bounds
+
+        view.bringSubviewToFront(imgPause)
+        view.bringSubviewToFront(img10Back)
+        view.bringSubviewToFront(img10Fwd)
+        view.bringSubviewToFront(seekSlider)
+        view.bringSubviewToFront(timeLabel)
+        view.bringSubviewToFront(imgClose)
+        videoPlayer.bringSubviewToFront(liveLabel)
     }
     
     
-    // MARK: - Make sure the video is playing
-    
-    func mediaPlayerStateChanged(_ aNotification: Notification) {
-        if (mediaPlayer?.state == .playing && !initialLoad) {
-            initialLoad = true
-            let totalTime = mediaPlayer?.media?.length
-            if let totalTime = totalTime, totalTime.intValue == 0 {
-                lbTotalTime.text = " Live •"
-                lbTotalTime.textAlignment = .center
-                lbTotalTime.backgroundColor = .red
-                lbTotalTime.textColor = .white
-                lbTotalTime.layer.cornerRadius = 8
-                lbTotalTime.clipsToBounds = true
-                lbTotalTime.font = UIFont.boldSystemFont(ofSize: 14)
-                seekSlider.isEnabled = false
-                seekSlider.isHidden = true
-            }
-            else {
-                updateTimer = Timer.scheduledTimer(timeInterval: 0.2, target: self, selector: #selector(updateUI), userInfo: nil, repeats: true)
-            }
-        }
-        
-        if (mediaPlayer?.state == .playing) {
-            startUITimer()
-        } else if (mediaPlayer?.state == .paused || mediaPlayer?.state == .stopped) {
-            uiTimer?.invalidate()
-        }
-    }
-    
-    // MARK: - Hide Controls UI with Timeout
-    
+    // MARK: - Control Visibility
     private func startUITimer() {
         uiTimer?.invalidate()
         uiTimer = Timer.scheduledTimer(timeInterval: 5, target: self, selector: #selector(hideControls), userInfo: nil, repeats: false)
     }
-    
+
     @objc private func onScreenTap() {
         if isControlsVisible {
             hideControls()
@@ -125,85 +144,41 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
             showControls()
         }
     }
-    
-    // Function for when sliding, the UI wont disappear
-    @IBAction func sliderTouchStarted(_ sender: Any) {
-        uiTimer?.invalidate()
-    }
-    
-    @IBAction func sliderTouchEnded(_ sender: Any) {
-        startUITimer()
-    }
-    
+
     @objc private func hideControls() {
-        uiTimer?.invalidate()
         isControlsVisible = false
-        UIView.animate(withDuration: 0.3) { [weak self] in
-            self?.controlView.alpha = 0.0
+        UIView.animate(withDuration: 0.3) {
+            self.imgPause.alpha = 0
+            self.imgClose.alpha = 0
+            self.img10Back.alpha = 0
+            self.img10Fwd.alpha = 0
+            self.seekSlider.alpha = 0
+            self.timeLabel.alpha = 0
+            self.liveLabel.alpha = 0
         }
+        setNeedsUpdateOfHomeIndicatorAutoHidden()
     }
-    
+
     private func showControls() {
         isControlsVisible = true
-        UIView.animate(withDuration: 0.3) { [weak self] in
-            self?.controlView.alpha = 1.0
+        UIView.animate(withDuration: 0.3) {
+            self.imgPause.alpha = 1
+            self.imgClose.alpha = 1
+            self.img10Back.alpha = 1
+            self.img10Fwd.alpha = 1
+            self.seekSlider.alpha = 1
+            self.timeLabel.alpha = 1
+            if !self.liveLabel.isHidden {
+                self.liveLabel.alpha = 1
+            }
         }
         startUITimer()
+        setNeedsUpdateOfHomeIndicatorAutoHidden()
     }
     
-    
-    // MARK: - Slider handling
-    @objc private func updateUI() {
-        guard let mediaPlayer = mediaPlayer else { return }
-        
-        //Remaining Time
-        let totalTime = mediaPlayer.media?.length.intValue ?? 0
-        let currentTime = mediaPlayer.time.intValue
-        
-        let remainingTime = totalTime - currentTime
-        
-        //Update Slider and Timer
-        lbTotalTime.text = formatTime(Int(remainingTime))
-        
-        //Only update slider if user isnt interacting with it
-        
-        if !seekSlider.isTracking {
-            seekSlider.value = Float(currentTime)
-            seekSlider.maximumValue = Float(totalTime)
-        }
-    }
-        
-    @IBAction func sliderValueChanged(_ sender: UISlider) {
-        guard let mediaPlayer = mediaPlayer else { return }
-        
-        let newTime = Int32(sender.value)
-        mediaPlayer.time = VLCTime(int: newTime)
-        seekSlider.value = Float(newTime)
-        
-        if mediaPlayer.state == .paused {
-            mediaPlayer.play()
-        }
-    }
-    
-    private func formatTime(_ timeInMs: Int) -> String {
-        let time = timeInMs / 1000
-        let hours = time / 3600
-        let minutes = (time % 3600) / 60
-        let seconds = time % 60
-        
-        if hours > 0 {
-            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
-        } else if minutes > 0 {
-            return String(format: "%02d:%02d", minutes, seconds)
-        } else {
-            return String(format: "%02d", seconds)
-        }
-    }
-    
-    // MARK: - Device Orientation Handling
-
+    // MARK: - Orientation
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        return .landscape
+        return [.landscapeLeft, .landscapeRight]
     }
 
     override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
@@ -213,72 +188,118 @@ class ViewController: UIViewController, VLCMediaPlayerDelegate {
     override var shouldAutorotate: Bool {
         return true
     }
-    
-    // MARK: - Full-Screen Immersive Mode
 
-    override var prefersStatusBarHidden: Bool {
-        return true
-    }
-    
     override var prefersHomeIndicatorAutoHidden: Bool {
         return true
     }
-
-    // MARK: - Notification Observers for System Gestures
-
-    private func addNotificationObservers() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleAppBecameActive),
-            name: UIApplication.didBecomeActiveNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleAppWillResignActive),
-            name: UIApplication.willResignActiveNotification,
-            object: nil
-        )
-    }
     
-    @objc private func handleAppBecameActive() {
-        // Resume playback when app becomes active
-        mediaPlayer?.play()
-    }
-    
-    @objc private func handleAppWillResignActive() {
-        // Pause playback when app resigns active
-        mediaPlayer?.pause()
-    }
-    
-    // MARK: - UI Controls
-    
-    @objc private func onTapPlayPause() {
-        if mediaPlayer?.isPlaying == true {
-            mediaPlayer?.pause()
-            imgPlay.image = UIImage(systemName: "play.fill")
-        }
-        else {
-            mediaPlayer?.play()
-            imgPlay.image = UIImage(systemName: "pause.fill")
+    private func formatTime(_ seconds: Double) -> String {
+        let intSec = Int(seconds)
+        let hrs = intSec / 3600
+        let mins = (intSec % 3600) / 60
+        let secs = intSec % 60
+        if hrs > 0 {
+            return String(format: "%d:%02d:%02d", hrs, mins, secs)
+        } else {
+            return String(format: "%02d:%02d", mins, secs)
         }
     }
     
-    @objc private func onTapClose() {
-        mediaPlayer?.stop()
-        mediaPlayer = nil
-        self.dismiss(animated: true, completion: nil)
+    // MARK: - Video Controls
+    @objc private func togglePlayPause() {
+        guard let player = player else { return }
+        if player.timeControlStatus == .playing {
+            player.pause()
+            imgPause.image = UIImage(systemName: "play.fill")
+        } else {
+            player.play()
+            imgPause.image = UIImage(systemName: "pause.fill")
+        }
+    }
+
+    @objc private func backwardTenSeconds() {
+        guard let player = player else { return }
+        let currentTime = player.currentTime()
+        let tenSeconds = CMTime(seconds: 10, preferredTimescale: currentTime.timescale)
+        let newTime = CMTimeSubtract(currentTime, tenSeconds)
+        let seekTime = CMTimeMaximum(newTime, .zero)
+        player.seek(to: seekTime)
     }
     
-    // MARK: - Cleanup
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-        mediaPlayer?.stop()
-        mediaPlayer = nil
-        updateTimer?.invalidate()
-        updateTimer = nil
+    @objc private func forwardTenSeconds() {
+        guard let player = player else { return }
+        let currentTime = player.currentTime()
+        let tenSeconds = CMTime(seconds: 10, preferredTimescale: currentTime.timescale)
+        let newTime = CMTimeAdd(currentTime, tenSeconds)
+        let seekTime = CMTimeMaximum(newTime, .zero)
+        player.seek(to: seekTime)
+    }
+    
+    @IBAction func sliderValueChanged(_ sender: UISlider) {
+        let seconds = Double(sender.value)
+        let targetTime = CMTime(seconds: seconds, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        player?.seek(to: targetTime)
+    }
+    
+    @objc private func dismissPlayer() {
+        player?.pause()
+        dismiss(animated: true, completion: nil)
+    }
+    
+    // MARK: - Slider View Logic
+    @IBAction func sliderTouchStarted(_ sender: UISlider) {
         uiTimer?.invalidate()
-        uiTimer = nil
+        player?.pause()
+    }
+
+    @IBAction func sliderTouchEnded(_ sender: UISlider) {
+        startUITimer()
+        player?.play()
+    }
+    // MARK: - Observe PlayerItem Status
+    override func observeValue(forKeyPath keyPath: String?,
+                               of object: Any?,
+                               change: [NSKeyValueChangeKey : Any]?,
+                               context: UnsafeMutableRawPointer?) {
+        if keyPath == "status",
+           let item = object as? AVPlayerItem,
+           item == player?.currentItem,
+           item.status == .readyToPlay {
+            // Determine if it's live or VOD
+            let duration = item.duration
+            DispatchQueue.main.async {
+                if duration.isIndefinite {
+                    // Live stream: hide seeker, show LIVE badge
+                    self.img10Back.isHidden = true
+                    self.img10Fwd.isHidden = true
+                    self.seekSlider.isHidden = true
+                    self.timeLabel.isHidden = true
+                    self.liveLabel.isHidden = false
+                } else {
+                    // VOD: show seeker and controls, hide LIVE badge
+                    self.img10Back.isHidden = false
+                    self.img10Back.isUserInteractionEnabled = true
+                    self.img10Fwd.isHidden = false
+                    self.img10Fwd.isUserInteractionEnabled = true
+                    self.seekSlider.isHidden = false
+                    self.timeLabel.isHidden = false
+                    self.liveLabel.isHidden = true
+                }
+                // Restart auto-hide timer
+                self.startUITimer()
+            }
+            // Remove observer after ready
+            item.removeObserver(self, forKeyPath: "status")
+            isObservingStatus = false
+        }
+    }
+    
+    deinit {
+        if let token = timeObserverToken {
+            player?.removeTimeObserver(token)
+        }
+        if isObservingStatus {
+            player?.currentItem?.removeObserver(self, forKeyPath: "status")
+        }
     }
 }
