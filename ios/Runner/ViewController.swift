@@ -1,15 +1,16 @@
-
 import UIKit
 import AVKit
 import AVFoundation
 
 
-class ViewController : UIViewController {
+class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     
     private var isControlsVisible = true
     private var uiTimer: Timer?
     private var timeObserverToken: Any?
     private var isObservingStatus = false
+    
+    private var pipController: AVPictureInPictureController?
     
     @IBOutlet var videoPlayer: UIView!
     @IBOutlet weak var imgPause: UIImageView! {
@@ -39,6 +40,7 @@ class ViewController : UIViewController {
             self.imgClose.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(dismissPlayer)))
         }
     }
+    @IBOutlet weak var airplayPicker: AVRoutePickerView!
     
     
     private var player: AVPlayer?
@@ -73,6 +75,26 @@ class ViewController : UIViewController {
         seekSlider.minimumTrackTintColor = .white
         seekSlider.maximumTrackTintColor = UIColor.white.withAlphaComponent(0.3)
         seekSlider.isContinuous = true
+        airplayPicker.activeTintColor = .white
+        airplayPicker.tintColor = .white
+        
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .moviePlayback, options: [.allowAirPlay])
+            try session.setActive(true)
+        } catch {
+            print("Audio session setup failed:", error)
+        }
+        
+        NotificationCenter.default.addObserver(self,
+            selector: #selector(handleWillResignActive),
+            name: UIApplication.willResignActiveNotification,
+            object: nil)
+        
+        NotificationCenter.default.addObserver(self,
+            selector: #selector(handleDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil)
     }
 
     
@@ -99,6 +121,11 @@ class ViewController : UIViewController {
         playerLayer?.videoGravity = .resizeAspect
         if let layer = playerLayer {
             videoPlayer.layer.insertSublayer(layer, at: 0)
+            
+            if AVPictureInPictureController.isPictureInPictureSupported(), let layer = playerLayer {
+                pipController = AVPictureInPictureController(playerLayer: layer)
+                pipController?.delegate = self
+            }
         }
         player?.play()
         let interval = CMTime(seconds: 1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
@@ -155,6 +182,7 @@ class ViewController : UIViewController {
             self.seekSlider.alpha = 0
             self.timeLabel.alpha = 0
             self.liveLabel.alpha = 0
+            self.airplayPicker.alpha = 0
         }
         setNeedsUpdateOfHomeIndicatorAutoHidden()
     }
@@ -171,6 +199,7 @@ class ViewController : UIViewController {
             if !self.liveLabel.isHidden {
                 self.liveLabel.alpha = 1
             }
+            self.airplayPicker.alpha = 1
         }
         startUITimer()
         setNeedsUpdateOfHomeIndicatorAutoHidden()
@@ -294,6 +323,14 @@ class ViewController : UIViewController {
         }
     }
     
+    @objc private func handleWillResignActive() {
+        pipController?.startPictureInPicture()
+    }
+    
+    @objc private func handleDidBecomeActive() {
+        pipController?.stopPictureInPicture()
+    }
+    
     deinit {
         if let token = timeObserverToken {
             player?.removeTimeObserver(token)
@@ -301,5 +338,7 @@ class ViewController : UIViewController {
         if isObservingStatus {
             player?.currentItem?.removeObserver(self, forKeyPath: "status")
         }
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willResignActiveNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIApplication.didBecomeActiveNotification, object: nil)
     }
 }
