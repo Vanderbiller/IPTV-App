@@ -4,6 +4,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23721"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -79,6 +80,14 @@
                                     <constraint firstAttribute="height" constant="22.329999999999998" id="qn1-aE-zq0"/>
                                 </constraints>
                             </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ey4-nY-Dz7" customClass="BrightnessSliderView" customModule="Runner" customModuleProvider="target">
+                                <rect key="frame" x="58" y="139" width="30" height="115"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="30" id="HJL-Cc-Yeu"/>
+                                    <constraint firstAttribute="height" constant="115" id="X0I-q3-sfM"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -86,10 +95,12 @@
                             <constraint firstItem="A9s-eX-Sic" firstAttribute="leading" secondItem="5LZ-g4-ib5" secondAttribute="trailing" constant="8.3300000000000001" id="71f-MM-fYO"/>
                             <constraint firstItem="9tk-uT-ZC3" firstAttribute="leading" secondItem="b36-St-ext" secondAttribute="trailing" constant="17" id="Abk-cf-rb0"/>
                             <constraint firstAttribute="trailing" secondItem="9tk-uT-ZC3" secondAttribute="trailing" constant="15" id="Jha-KN-kdG"/>
+                            <constraint firstItem="ey4-nY-Dz7" firstAttribute="leading" secondItem="YLK-wI-3gb" secondAttribute="leading" constant="58" id="Lgo-ot-oj3"/>
                             <constraint firstItem="A9s-eX-Sic" firstAttribute="top" secondItem="YLK-wI-3gb" secondAttribute="top" constant="16" id="MFj-4L-Jhm"/>
                             <constraint firstAttribute="bottom" secondItem="b36-St-ext" secondAttribute="bottom" constant="26" id="Mep-Vk-gVY"/>
                             <constraint firstItem="0h5-9B-81X" firstAttribute="centerY" secondItem="YLK-wI-3gb" secondAttribute="centerY" id="QY2-GN-KmO"/>
                             <constraint firstItem="b36-St-ext" firstAttribute="leading" secondItem="YLK-wI-3gb" secondAttribute="leading" constant="28" id="aJ1-Bp-7gP"/>
+                            <constraint firstItem="ey4-nY-Dz7" firstAttribute="centerY" secondItem="YLK-wI-3gb" secondAttribute="centerY" id="bGK-RT-gXL"/>
                             <constraint firstItem="DUq-iI-rsK" firstAttribute="centerY" secondItem="YLK-wI-3gb" secondAttribute="centerY" id="cNQ-eC-ubg"/>
                             <constraint firstAttribute="trailing" secondItem="A9s-eX-Sic" secondAttribute="trailing" constant="30" id="feb-dx-aWy"/>
                             <constraint firstItem="5LZ-g4-ib5" firstAttribute="top" secondItem="YLK-wI-3gb" secondAttribute="top" constant="16" id="ffv-b5-XJd"/>
@@ -101,6 +112,7 @@
                     </view>
                     <connections>
                         <outlet property="airplayPicker" destination="5LZ-g4-ib5" id="knW-D8-Nll"/>
+                        <outlet property="brightnessSlider" destination="ey4-nY-Dz7" id="lsK-9c-FpB"/>
                         <outlet property="img10Back" destination="ZwB-pV-ads" id="ecl-uN-gWE"/>
                         <outlet property="img10Fwd" destination="0h5-9B-81X" id="CbB-Mx-X1q"/>
                         <outlet property="imgClose" destination="A9s-eX-Sic" id="oZV-nf-eCI"/>
@@ -138,5 +150,8 @@
         <image name="10.arrow.trianglehead.counterclockwise" catalog="system" width="119" height="128"/>
         <image name="pause.fill" catalog="system" width="114" height="128"/>
         <image name="xmark" catalog="system" width="128" height="113"/>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
     </resources>
 </document>
