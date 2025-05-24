@@ -47,7 +47,7 @@ class BrightnessSliderView: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        let trackWidth: CGFloat = 4
+        let trackWidth: CGFloat = 6
         let x = (bounds.width - trackWidth) / 2
         trackView.frame = CGRect(x: x, y: 0, width: trackWidth, height: bounds.height)
         
