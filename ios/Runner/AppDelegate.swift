@@ -23,7 +23,8 @@ import UIKit
             if call.method == "playVideo" {
                 guard let args = call.arguments as? [String: Any],
                     let urlString = args["url"] as? String,
-                    let url = URL(string: urlString)
+                    let url = URL(string: urlString),
+                    let title = args["title"] as? String
                 else {
                     result(
                         FlutterError(
@@ -33,7 +34,7 @@ import UIKit
                         ))
                     return
                 }
-                self?.presentVideoPlayer(with: url)
+                self?.presentVideoPlayer(with: url, with: title)
                 result(nil)
             } else {
                 result(FlutterMethodNotImplemented)
@@ -43,7 +44,7 @@ import UIKit
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 
-    private func presentVideoPlayer(with url: URL) {
+    private func presentVideoPlayer(with url: URL, with title: String) {
         guard
             let windowScene = UIApplication.shared.connectedScenes
                 .compactMap({ $0 as? UIWindowScene })
@@ -63,7 +64,7 @@ import UIKit
             return
         }
 
-        playerVC.configure(with: url)
+        playerVC.configure(with: url, with: title)
         playerVC.modalPresentationStyle = .fullScreen
         rootVC.present(playerVC, animated: true, completion: nil)
     }

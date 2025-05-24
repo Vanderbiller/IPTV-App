@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 
 class VideoPlayerPage extends StatefulWidget {
   final String channelUrl;
-  const VideoPlayerPage({super.key, required this.channelUrl});
+  final String title;
+  const VideoPlayerPage({super.key, required this.channelUrl, required this.title});
 
   @override
 VideoPlayerPageState createState() => VideoPlayerPageState();
@@ -12,10 +13,11 @@ VideoPlayerPageState createState() => VideoPlayerPageState();
 class VideoPlayerPageState extends State<VideoPlayerPage> {
   static const platform = MethodChannel('video_player_channel');
 
-  Future<void> _playVideo(String videoUrl) async {
+  Future<void> _playVideo(String videoUrl, String title) async {
     try {
       await platform.invokeMethod('playVideo', {
         'url': videoUrl,
+        'title': title
       });
     } on PlatformException catch (e) {
       print("Failed to play video: '${e.message}'.");
@@ -34,7 +36,7 @@ class VideoPlayerPageState extends State<VideoPlayerPage> {
       body: Center(
         child: ElevatedButton(
           onPressed: () {
-            _playVideo(widget.channelUrl);
+            _playVideo(widget.channelUrl, widget.title);
           },
           child: const Text('Play Video'),
         ),

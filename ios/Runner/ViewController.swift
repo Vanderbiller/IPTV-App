@@ -41,12 +41,18 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         }
     }
     @IBOutlet weak var airplayPicker: AVRoutePickerView!
+    @IBOutlet weak var brightnessSlider: BrightnessSliderView!
+    @IBOutlet weak var imgBrightness: UIImageView!
+    @IBOutlet weak var titleLabel: UILabel!
     
+    var vignetteView: UIView?
     
     private var player: AVPlayer?
     private var playerLayer: AVPlayerLayer?
     private var mediaUrl: URL?
+    private var mediaTitle: String?
 
+    
     private let liveLabel: UILabel = {
         let label = UILabel()
         label.text = "LIVE"
@@ -59,15 +65,19 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         label.isHidden = true
         return label
     }()
-    
-    func configure(with url: URL) {
+        
+    func configure(with url: URL, with title: String) {
         mediaUrl = url
+        mediaTitle = title
     }
     
     override func viewDidLoad() {
+        guard let title = mediaTitle else { return }
         super.viewDidLoad()
         setupPlayer()
         configureLiveLabel()
+        titleLabel.text = title
+        
         let tap = UITapGestureRecognizer(target: self, action: #selector(onScreenTap))
         videoPlayer.isUserInteractionEnabled = true
         videoPlayer.addGestureRecognizer(tap)
@@ -78,12 +88,56 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         airplayPicker.activeTintColor = .white
         airplayPicker.tintColor = .white
         
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .moviePlayback, options: [.allowAirPlay])
-            try session.setActive(true)
-        } catch {
-            print("Audio session setup failed:", error)
+        // MARK: - Brightness Slider Logic
+        brightnessSlider.valueChanged = {
+            newValue in
+            UIScreen.main.brightness = newValue
+        }
+        brightnessSlider.value = UIScreen.main.brightness
+        brightnessSlider.touchStarted = { [weak self] in
+            guard let self = self else { return }
+            self.uiTimer?.invalidate()
+            UIView.animate(withDuration: 0.3) {
+                self.imgPause.alpha = 0
+                self.imgClose.alpha = 0
+                self.img10Back.alpha = 0
+                self.img10Fwd.alpha = 0
+                self.seekSlider.alpha = 0
+                self.timeLabel.alpha = 0
+                self.liveLabel.alpha = 0
+                self.airplayPicker.alpha = 0
+                self.titleLabel.alpha = 0
+            }
+        }
+        
+        brightnessSlider.touchEnded = { [weak self] in
+            guard let self = self else { return }
+            self.startUITimer()
+            UIView.animate(withDuration: 0.3) {
+                self.imgPause.alpha = 1
+                self.imgClose.alpha = 1
+                self.img10Back.alpha = 1
+                self.img10Fwd.alpha = 1
+                self.seekSlider.alpha = 1
+                self.timeLabel.alpha = 1
+                if !self.liveLabel.isHidden {
+                    self.liveLabel.alpha = 1
+                }
+                self.airplayPicker.alpha = 1
+                self.titleLabel.alpha = 1
+            }
+        }
+        
+        DispatchQueue.main.async {
+            do {
+                let session = AVAudioSession.sharedInstance()
+                //print("Before setup: category=\(session.category.rawValue)")
+                try session.setCategory(.playback)
+                try session.setActive(true)
+                //print("After setup: category=\(session.category.rawValue)")
+            } catch let error as NSError {
+                print("Audio session setup failed: \(error), userInfo: \(error.userInfo)")
+            }
         }
         
         NotificationCenter.default.addObserver(self,
@@ -111,6 +165,8 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     
     private func setupPlayer() {
         guard let url = mediaUrl else {return}
+        guard let title = mediaTitle else {return}
+        print(title)
         player = AVPlayer(url: url)
         player?.currentItem?.addObserver(self,
                                          forKeyPath: "status",
@@ -154,6 +210,10 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         view.bringSubviewToFront(seekSlider)
         view.bringSubviewToFront(timeLabel)
         view.bringSubviewToFront(imgClose)
+        view.bringSubviewToFront(airplayPicker)
+        view.bringSubviewToFront(brightnessSlider)
+        view.bringSubviewToFront(imgBrightness)
+        view.bringSubviewToFront(titleLabel)
         videoPlayer.bringSubviewToFront(liveLabel)
     }
     
@@ -174,6 +234,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
 
     @objc private func hideControls() {
         isControlsVisible = false
+        removeVignette()
         UIView.animate(withDuration: 0.3) {
             self.imgPause.alpha = 0
             self.imgClose.alpha = 0
@@ -183,12 +244,16 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
             self.timeLabel.alpha = 0
             self.liveLabel.alpha = 0
             self.airplayPicker.alpha = 0
+            self.brightnessSlider.alpha = 0
+            self.imgBrightness.alpha = 0
+            self.titleLabel.alpha = 0
         }
         setNeedsUpdateOfHomeIndicatorAutoHidden()
     }
 
     private func showControls() {
         isControlsVisible = true
+        addVignette()
         UIView.animate(withDuration: 0.3) {
             self.imgPause.alpha = 1
             self.imgClose.alpha = 1
@@ -200,6 +265,9 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
                 self.liveLabel.alpha = 1
             }
             self.airplayPicker.alpha = 1
+            self.brightnessSlider.alpha = 1
+            self.imgBrightness.alpha = 1
+            self.titleLabel.alpha = 1
         }
         startUITimer()
         setNeedsUpdateOfHomeIndicatorAutoHidden()
@@ -275,7 +343,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         dismiss(animated: true, completion: nil)
     }
     
-    // MARK: - Slider View Logic
+    // MARK: - SeekerSlider View Logic
     @IBAction func sliderTouchStarted(_ sender: UISlider) {
         uiTimer?.invalidate()
         player?.pause()
@@ -285,6 +353,31 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         startUITimer()
         player?.play()
     }
+     
+    // MARK: - Vignette Logic
+    func addVignette() {
+        vignetteView?.removeFromSuperview()
+        let overlay = UIView(frame: view.bounds)
+        overlay.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+        overlay.isUserInteractionEnabled = false
+        overlay.alpha = 0
+        view.addSubview(overlay)
+        vignetteView = overlay
+
+        UIView.animate(withDuration: 0.3) {
+            overlay.alpha = 1
+        }
+    }
+    
+    func removeVignette() {
+        UIView.animate(withDuration: 0.3, animations: {
+            self.vignetteView?.alpha = 0
+        }) { _ in
+            self.vignetteView?.removeFromSuperview()
+            self.vignetteView = nil
+        }
+    }
+    
     // MARK: - Observe PlayerItem Status
     override func observeValue(forKeyPath keyPath: String?,
                                of object: Any?,
