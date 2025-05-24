@@ -88,12 +88,28 @@
                                     <constraint firstAttribute="height" constant="115" id="X0I-q3-sfM"/>
                                 </constraints>
                             </view>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="sun.max" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="sMm-mr-1b2">
+                                <rect key="frame" x="55" y="112" width="37" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Fz4-gv-17E">
+                                <rect key="frame" x="58" y="17" width="449" height="21"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="21" id="Mzk-M1-waa"/>
+                                    <constraint firstAttribute="width" constant="449" id="qa1-Z3-pA8"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="9tk-uT-ZC3" secondAttribute="bottom" constant="35" id="4Vx-Mi-oHg"/>
                             <constraint firstItem="A9s-eX-Sic" firstAttribute="leading" secondItem="5LZ-g4-ib5" secondAttribute="trailing" constant="8.3300000000000001" id="71f-MM-fYO"/>
                             <constraint firstItem="9tk-uT-ZC3" firstAttribute="leading" secondItem="b36-St-ext" secondAttribute="trailing" constant="17" id="Abk-cf-rb0"/>
+                            <constraint firstItem="Fz4-gv-17E" firstAttribute="top" secondItem="YLK-wI-3gb" secondAttribute="top" constant="17" id="Hg1-Ml-6Oa"/>
                             <constraint firstAttribute="trailing" secondItem="9tk-uT-ZC3" secondAttribute="trailing" constant="15" id="Jha-KN-kdG"/>
                             <constraint firstItem="ey4-nY-Dz7" firstAttribute="leading" secondItem="YLK-wI-3gb" secondAttribute="leading" constant="58" id="Lgo-ot-oj3"/>
                             <constraint firstItem="A9s-eX-Sic" firstAttribute="top" secondItem="YLK-wI-3gb" secondAttribute="top" constant="16" id="MFj-4L-Jhm"/>
@@ -106,6 +122,7 @@
                             <constraint firstItem="5LZ-g4-ib5" firstAttribute="top" secondItem="YLK-wI-3gb" secondAttribute="top" constant="16" id="ffv-b5-XJd"/>
                             <constraint firstItem="DUq-iI-rsK" firstAttribute="centerX" secondItem="YLK-wI-3gb" secondAttribute="centerX" id="iGv-1d-ehJ"/>
                             <constraint firstItem="0h5-9B-81X" firstAttribute="leading" secondItem="DUq-iI-rsK" secondAttribute="trailing" constant="50" id="lGb-4e-SWS"/>
+                            <constraint firstItem="Fz4-gv-17E" firstAttribute="leading" secondItem="YLK-wI-3gb" secondAttribute="leading" constant="58" id="mS2-yN-uKX"/>
                             <constraint firstItem="ZwB-pV-ads" firstAttribute="centerY" secondItem="YLK-wI-3gb" secondAttribute="centerY" id="nno-Lo-pCm"/>
                             <constraint firstItem="DUq-iI-rsK" firstAttribute="leading" secondItem="ZwB-pV-ads" secondAttribute="trailing" constant="50" id="pLQ-xh-Sba"/>
                         </constraints>
@@ -115,10 +132,12 @@
                         <outlet property="brightnessSlider" destination="ey4-nY-Dz7" id="lsK-9c-FpB"/>
                         <outlet property="img10Back" destination="ZwB-pV-ads" id="ecl-uN-gWE"/>
                         <outlet property="img10Fwd" destination="0h5-9B-81X" id="CbB-Mx-X1q"/>
+                        <outlet property="imgBrightness" destination="sMm-mr-1b2" id="iOO-Y5-T6H"/>
                         <outlet property="imgClose" destination="A9s-eX-Sic" id="oZV-nf-eCI"/>
                         <outlet property="imgPause" destination="DUq-iI-rsK" id="LOZ-Ri-ui3"/>
                         <outlet property="seekSlider" destination="b36-St-ext" id="uIb-PS-rtZ"/>
                         <outlet property="timeLabel" destination="9tk-uT-ZC3" id="sJL-wx-ZXg"/>
+                        <outlet property="titleLabel" destination="Fz4-gv-17E" id="reQ-44-ph6"/>
                         <outlet property="videoPlayer" destination="YLK-wI-3gb" id="QYB-BJ-b9A"/>
                     </connections>
                 </viewController>
@@ -149,6 +168,7 @@
         <image name="10.arrow.trianglehead.clockwise" catalog="system" width="119" height="128"/>
         <image name="10.arrow.trianglehead.counterclockwise" catalog="system" width="119" height="128"/>
         <image name="pause.fill" catalog="system" width="114" height="128"/>
+        <image name="sun.max" catalog="system" width="128" height="125"/>
         <image name="xmark" catalog="system" width="128" height="113"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
