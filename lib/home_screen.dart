@@ -112,6 +112,7 @@ class HomeScreenState extends State<HomeScreen> {
                                       MaterialPageRoute(
                                         builder: (context) => VideoPlayerPage(
                                           channelUrl: channel.url,
+                                          title: channel.name,
                                         ),
                                       ),
                                     );
