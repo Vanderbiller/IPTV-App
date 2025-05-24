@@ -41,6 +41,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         }
     }
     @IBOutlet weak var airplayPicker: AVRoutePickerView!
+    @IBOutlet weak var brightnessSlider: BrightnessSliderView!
     
     
     private var player: AVPlayer?
@@ -78,12 +79,51 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         airplayPicker.activeTintColor = .white
         airplayPicker.tintColor = .white
         
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .moviePlayback, options: [.allowAirPlay])
-            try session.setActive(true)
-        } catch {
-            print("Audio session setup failed:", error)
+        // MARK: - Brightness Slider Logic
+        brightnessSlider.valueChanged = {
+            newValue in
+            UIScreen.main.brightness = newValue
+        }
+        brightnessSlider.value = UIScreen.main.brightness
+        brightnessSlider.touchStarted = { [weak self] in
+            guard let self = self else { return }
+            self.uiTimer?.invalidate()
+            UIView.animate(withDuration: 0.3) {
+                self.imgPause.alpha = 0
+                self.imgClose.alpha = 0
+                self.img10Back.alpha = 0
+                self.img10Fwd.alpha = 0
+                self.seekSlider.alpha = 0
+                self.timeLabel.alpha = 0
+                self.liveLabel.alpha = 0
+                self.airplayPicker.alpha = 0
+            }
+        }
+        
+        brightnessSlider.touchEnded = { [weak self] in
+            guard let self = self else { return }
+            self.startUITimer()
+            UIView.animate(withDuration: 0.3) {
+                self.imgPause.alpha = 1
+                self.imgClose.alpha = 1
+                self.img10Back.alpha = 1
+                self.img10Fwd.alpha = 1
+                self.seekSlider.alpha = 1
+                self.timeLabel.alpha = 1
+                self.liveLabel.alpha = 1
+            }
+        }
+        
+        DispatchQueue.main.async {
+            do {
+                let session = AVAudioSession.sharedInstance()
+                //print("Before setup: category=\(session.category.rawValue)")
+                try session.setCategory(.playback)
+                try session.setActive(true)
+                //print("After setup: category=\(session.category.rawValue)")
+            } catch let error as NSError {
+                print("Audio session setup failed: \(error), userInfo: \(error.userInfo)")
+            }
         }
         
         NotificationCenter.default.addObserver(self,
@@ -183,6 +223,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
             self.timeLabel.alpha = 0
             self.liveLabel.alpha = 0
             self.airplayPicker.alpha = 0
+            self.brightnessSlider.alpha = 0
         }
         setNeedsUpdateOfHomeIndicatorAutoHidden()
     }
@@ -200,6 +241,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
                 self.liveLabel.alpha = 1
             }
             self.airplayPicker.alpha = 1
+            self.brightnessSlider.alpha = 1
         }
         startUITimer()
         setNeedsUpdateOfHomeIndicatorAutoHidden()
@@ -285,6 +327,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         startUITimer()
         player?.play()
     }
+        
     // MARK: - Observe PlayerItem Status
     override func observeValue(forKeyPath keyPath: String?,
                                of object: Any?,
