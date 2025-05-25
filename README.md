@@ -91,7 +91,7 @@ Or open `ios/Runner.xcworkspace` in Xcode and run on a simulator/device.
 
 ## 📜 License
 
-MIT License. See [LICENSE](LICENSE).
+APACHE License. See [LICENSE](LICENSE).
 
 ---
 
