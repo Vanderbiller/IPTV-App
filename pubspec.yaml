@@ -37,8 +37,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.2.2
   cached_network_image: ^3.4.1
-  video_player: ^2.9.2
-  chewie: ^1.8.5
+  shared_preferences: ^2.5.3
+  image_picker: ^1.1.2
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
