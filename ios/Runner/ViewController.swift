@@ -96,6 +96,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         brightnessSlider.value = UIScreen.main.brightness
         brightnessSlider.touchStarted = { [weak self] in
             guard let self = self else { return }
+            removeVignette()
             self.uiTimer?.invalidate()
             UIView.animate(withDuration: 0.3) {
                 self.imgPause.alpha = 0
@@ -112,6 +113,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         
         brightnessSlider.touchEnded = { [weak self] in
             guard let self = self else { return }
+            addVignette()
             self.startUITimer()
             UIView.animate(withDuration: 0.3) {
                 self.imgPause.alpha = 1
