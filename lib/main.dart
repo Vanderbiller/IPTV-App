@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'package:sample_app/screens/profile_screen.dart';
 
 void main() {
   runApp(const MyIPTVApp());
@@ -15,7 +15,12 @@ class MyIPTVApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomeScreen(),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.blue,
+      ),
+      themeMode: ThemeMode.system,
+      home: const ProfileScreen(),
     );
   }
 }
