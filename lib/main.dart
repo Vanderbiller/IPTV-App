@@ -13,7 +13,18 @@ class MyIPTVApp extends StatelessWidget {
     return MaterialApp(
       title: 'IPTV Player',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        brightness: Brightness.dark,
+        primaryColor: Colors.redAccent,
+        scaffoldBackgroundColor: Colors.black,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.black,
+          elevation: 0,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.black,
+          selectedItemColor: Colors.redAccent,
+          unselectedItemColor: Colors.white70,
+        ),
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,

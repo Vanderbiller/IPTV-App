@@ -3,13 +3,12 @@ import '../models/profile.dart';
 import '../managers/profile_manager.dart';
 import '../managers/image_manager.dart';
 import '../widgets/add_profile_widget.dart';
-import 'channel_groups_screen.dart';
+import 'main_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String title;
 
-  const ProfileScreen({Key? key, this.title = "Whos watching today?"})
-      : super(key: key);
+  const ProfileScreen({super.key, this.title = "Whos watching today?"});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -66,13 +65,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   _onProfileTap(Profile profile) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ChannelGroupsScreen(m3uUrl: profile.url),
-    ),
-  );
-}
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MainScreen(m3uUrl: profile.url),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _AddProfileTile(onTap: _onAddProfile),
                       ],
                     ),
-                    Spacer(),
+                    const Spacer(),
                     GestureDetector(
                       onTap: _onManageProfiles,
                       child: const Padding(
@@ -146,8 +145,7 @@ class _ProfileTile extends StatelessWidget {
   final Profile profile;
   final VoidCallback onTap;
 
-  const _ProfileTile({Key? key, required this.profile, required this.onTap})
-      : super(key: key);
+  const _ProfileTile({super.key, required this.profile, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +190,7 @@ class _ProfileTile extends StatelessWidget {
 
 class _AddProfileTile extends StatelessWidget {
   final VoidCallback onTap;
-  const _AddProfileTile({Key? key, required this.onTap}) : super(key: key);
+  const _AddProfileTile({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

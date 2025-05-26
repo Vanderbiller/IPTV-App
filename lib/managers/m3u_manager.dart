@@ -1,22 +1,15 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
-
-class Channel {
-  final String name;
-  final String logo;
-  final String url;
-  final String grouping;
-
-  Channel(
-      {required this.name,
-      required this.logo,
-      required this.url,
-      required this.grouping});
-}
+import '../models/channel.dart';
+import '../models/movie.dart';
+import '../models/show.dart';
 
 class M3UParser {
-  Future<Map<String?, List<Channel>>> parseM3U(String url) async {
+  Future<({
+    Map<String?, List<Channel>> channelsByGroup,
+    Map<String, List<Movie>> moviesByCategory,
+    Map<String, Show> showsByTitle,
+  })> parseM3U(String url) async {
     final client = http.Client();
         // Ensure URL uses type=m3u_plus and output=m3u8
     Uri uri = Uri.parse(url);
@@ -30,7 +23,9 @@ class M3UParser {
     final res = await client.send(request);
 
     if (res.statusCode == 200) {
-      Map<String?, List<Channel>> channels = {};
+      final channelsByGroup = <String?, List<Channel>>{};
+      final moviesByCategory = <String, List<Movie>>{};
+      final showsByTitle = <String, Show>{};
 
       final stream =
           res.stream.transform(utf8.decoder).transform(const LineSplitter());
@@ -54,17 +49,67 @@ class M3UParser {
               RegExp(r'group-title="([^"]*)"').firstMatch(line)?.group(1);
           currentGrouping ??= 'Other';
         } else if (line.startsWith('http') && currentName != null) {
-          if (!channels.containsKey(currentGrouping)) {
-            channels[currentGrouping] = [];
-          }
-          channels[currentGrouping]!.add(Channel(
+          final streamUrl = line.trim();
+          final grouping = currentGrouping ?? 'Other';
+
+          if (grouping.contains('VOD')) {
+            final category = grouping.contains('VOD:')
+                ? grouping.split('VOD:')[1].trim()
+                : grouping;
+            moviesByCategory.putIfAbsent(category, () => []);
+            moviesByCategory[category]!.add(Movie(
+              title: currentName,
+              logo: currentLogo ?? '',
+              url: streamUrl,
+              category: category,
+            ));
+          } else if (grouping.contains('SRS')) {
+            // Episode
+            final rc = RegExp(r'(.+?)\s[Ss](\d+)[Ee](\d+)', caseSensitive: false);
+            final match = rc.firstMatch(currentName);
+            final showTitle = match != null
+                ? match.group(1)!.trim()
+                : currentName;
+            final seasonNum = match != null ? match.group(2)! : '1';
+            final seasonKey = 'Season $seasonNum';
+
+            final parts = grouping.split('|');
+            final showCategory = parts.length > 1 ? parts[1].trim() : grouping;
+
+            final episode = Episode(
+              title: currentName,
+              url: streamUrl,
+              logo: currentLogo ?? '',
+            );
+
+            if (!showsByTitle.containsKey(showTitle)) {
+              showsByTitle[showTitle] = Show(
+                title: showTitle,
+                logo: currentLogo ?? '',
+                category: showCategory,
+                seasons: {},
+              );
+            }
+            final show = showsByTitle[showTitle]!;
+            show.seasons.putIfAbsent(seasonKey, () => []);
+            show.seasons[seasonKey]!.add(episode);
+          } else {
+            // Live TV channel
+            channelsByGroup.putIfAbsent(grouping, () => []);
+            channelsByGroup[grouping]!.add(Channel(
               name: currentName,
               logo: currentLogo ?? '',
-              url: line.trim(),
-              grouping: currentGrouping ?? ''));
+              url: streamUrl,
+              grouping: grouping,
+            ));
+          }
         }
       }
-      return channels;
+      return (
+        channelsByGroup: channelsByGroup,
+        moviesByCategory: moviesByCategory,
+        showsByTitle: showsByTitle,
+      );
     } else {
       throw Exception("Failed to load M3U File");
     }
