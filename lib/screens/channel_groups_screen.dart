@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'video_player_screen.dart';
 import '../models/channel.dart';
@@ -62,6 +61,8 @@ class ChannelGroupsScreen extends StatelessWidget {
                             builder: (context) => VideoPlayerPage(
                               channelUrl: channel.url,
                               title: channel.name,
+                              thumbnailUrl: channel.logo,
+                              category: channel.grouping,
                             ),
                           ),
                         );

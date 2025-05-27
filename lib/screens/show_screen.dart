@@ -1,44 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../models/movie.dart';
+import '../models/show.dart';
 import 'video_player_screen.dart';
 
-class MoviesScreen extends StatelessWidget {
-  final Map<String?, List<Movie>>? movies;
-  const MoviesScreen({super.key, required this.movies});
+class ShowScreen extends StatelessWidget {
+  final Map<String, Show>? shows;
+
+  const ShowScreen({super.key, required this.shows});
 
   @override
   Widget build(BuildContext context) {
-    if (movies == null || movies!.isEmpty) {
+    if (shows == null || shows!.isEmpty) {
       return const Center(
         child: Text(
-          'No movies available.',
+          'No shows available.',
           style: TextStyle(color: Colors.white70),
         ),
       );
     }
 
-    String? latestMoviesCategory;
-    for (final key in movies!.keys) {
-      if (key?.toUpperCase() == 'VOD | EN LATEST MOVIES') {
-        latestMoviesCategory = key;
+    // Group shows by category
+    final showsByCategory = <String, List<Show>>{};
+    for (final show in shows!.values) {
+      showsByCategory.putIfAbsent(show.category, () => []);
+      showsByCategory[show.category]!.add(show);
+    }
+
+    // Get latest shows for carousel
+    String? latestShowsCategory;
+    for (final key in showsByCategory.keys) {
+      if (key.toUpperCase().contains('LATEST')) {
+        latestShowsCategory = key;
         break;
       }
     }
-    latestMoviesCategory ??= movies!.keys.first;
-    final carouselMovies = movies![latestMoviesCategory]!;
+    latestShowsCategory ??= showsByCategory.keys.first;
+    final carouselShows = showsByCategory[latestShowsCategory]!;
 
     return _AutoSwipingCarousel(
-      carouselMovies: carouselMovies,
-      allMovies: movies!,
+      carouselShows: carouselShows,
+      allShows: showsByCategory,
     );
   }
 }
 
 class _AutoSwipingCarousel extends StatefulWidget {
-  final List<Movie> carouselMovies;
-  final Map<String?, List<Movie>> allMovies;
-  const _AutoSwipingCarousel({required this.carouselMovies, required this.allMovies});
+  final List<Show> carouselShows;
+  final Map<String, List<Show>> allShows;
+  const _AutoSwipingCarousel({required this.carouselShows, required this.allShows});
 
   @override
   State<_AutoSwipingCarousel> createState() => _AutoSwipingCarouselState();
@@ -46,14 +55,15 @@ class _AutoSwipingCarousel extends StatefulWidget {
 
 class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
   late final PageController _pageController;
-  late final List<Movie> _carouselMovies;
-  late final Map<String?, List<Movie>> _allMovies;
+  late final List<Show> _carouselShows;
+  late final Map<String, List<Show>> _allShows;
+
   @override
   void initState() {
     super.initState();
-    _carouselMovies = widget.carouselMovies;
-    _allMovies = widget.allMovies;
-    int initial = (_carouselMovies.length > 1) ? 1 : 0;
+    _carouselShows = widget.carouselShows;
+    _allShows = widget.allShows;
+    int initial = (_carouselShows.length > 1) ? 1 : 0;
     _pageController = PageController(viewportFraction: 0.65, initialPage: initial);
   }
 
@@ -71,21 +81,16 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
           height: 360,
           child: PageView.builder(
             controller: _pageController,
-            itemCount: _carouselMovies.length,
+            itemCount: _carouselShows.length,
             onPageChanged: (i) {},
             itemBuilder: (context, index) {
-              final movie = _carouselMovies[index];
+              final show = _carouselShows[index];
               return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => VideoPlayerPage(
-                        channelUrl: movie.url,
-                        title: movie.title,
-                        thumbnailUrl: movie.logo,
-                        category: movie.category,
-                      ),
+                      builder: (_) => ShowDetailScreen(show: show),
                     ),
                   );
                 },
@@ -110,7 +115,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                         fit: StackFit.expand,
                         children: [
                           CachedNetworkImage(
-                            imageUrl: movie.logo,
+                            imageUrl: show.logo,
                             placeholder: (context, url) => Container(
                               color: Colors.grey[900],
                               child: const Center(
@@ -146,7 +151,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               child: Text(
-                                movie.title,
+                                show.title,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   color: Colors.white,
@@ -164,7 +169,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                               ),
                             ),
                           ),
-                          if (movie.category.isNotEmpty)
+                          if (show.category.isNotEmpty)
                             Positioned(
                               left: 0,
                               right: 0,
@@ -172,7 +177,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 child: Text(
-                                  movie.category,
+                                  show.category,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Colors.white70,
@@ -193,7 +198,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
           ),
         ),
         const SizedBox(height: 24),
-        ..._allMovies.entries.map((entry) {
+        ..._allShows.entries.map((entry) {
           final category = entry.key;
           final list = entry.value;
           return Padding(
@@ -204,7 +209,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                 Padding(
                   padding: const EdgeInsets.only(left: 16, bottom: 8),
                   child: Text(
-                    category!.toUpperCase(),
+                    category.toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -219,18 +224,13 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                     scrollDirection: Axis.horizontal,
                     itemCount: list.length,
                     itemBuilder: (context, i) {
-                      final movie = list[i];
+                      final show = list[i];
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => VideoPlayerPage(
-                                channelUrl: movie.url,
-                                title: movie.title,
-                                thumbnailUrl: movie.logo,
-                                category: movie.category,
-                              ),
+                              builder: (_) => ShowDetailScreen(show: show),
                             ),
                           );
                         },
@@ -245,7 +245,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(7),
                                 child: CachedNetworkImage(
-                                  imageUrl: movie.logo,
+                                  imageUrl: show.logo,
                                   placeholder: (context, url) => Container(
                                     color: Colors.grey[900],
                                     child: const Center(
@@ -283,7 +283,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                                     ),
                                   ),
                                   child: Text(
-                                    movie.title,
+                                    show.title,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -309,3 +309,175 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
     );
   }
 }
+
+class ShowDetailScreen extends StatefulWidget {
+  final Show show;
+
+  const ShowDetailScreen({super.key, required this.show});
+
+  @override
+  State<ShowDetailScreen> createState() => _ShowDetailScreenState();
+}
+
+class _ShowDetailScreenState extends State<ShowDetailScreen> {
+  String? _selectedSeason;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedSeason = widget.show.seasons.keys.first;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Text(
+          widget.show.title,
+          style: const TextStyle(color: Colors.white),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(widget.show.logo),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                widget.show.category,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: widget.show.seasons.length > 1 
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedSeason,
+                    isExpanded: true,
+                    dropdownColor: Colors.black,
+                    style: TextStyle(
+                      color: widget.show.seasons.length > 1 
+                          ? Colors.white 
+                          : Colors.white.withOpacity(0.5),
+                      fontSize: 14,
+                    ),
+                    icon: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: widget.show.seasons.length > 1 ? 1.0 : 0.3,
+                      child: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                    ),
+                    items: widget.show.seasons.keys.map((String season) {
+                      return DropdownMenuItem<String>(
+                        value: season,
+                        child: Text(season),
+                      );
+                    }).toList(),
+                    onChanged: widget.show.seasons.length > 1
+                        ? (String? newValue) {
+                            if (newValue != null) {
+                              setState(() {
+                                _selectedSeason = newValue;
+                              });
+                            }
+                          }
+                        : null,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            if (_selectedSeason != null)
+              ...widget.show.seasons[_selectedSeason]!.asMap().entries.map((entry) {
+                final episode = entry.value;
+
+                return ListTile(
+                  leading: Container(
+                    width: 80,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: CachedNetworkImage(
+                        imageUrl: episode.logo,
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[900],
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.redAccent),
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[900],
+                          child: const Center(
+                            child: Icon(Icons.broken_image, color: Colors.white30),
+                          ),
+                        ),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    episode.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VideoPlayerPage(
+                          channelUrl: episode.url,
+                          title: episode.title,
+                          thumbnailUrl: episode.logo,
+                          category: widget.show.category,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+          ],
+        ),
+      ),
+    );
+  }
+} 
