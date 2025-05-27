@@ -95,4 +95,4 @@ APACHE License. See [LICENSE](LICENSE).
 
 ---
 
-**Made with ❤️ & Swift** by Adam Vanbaelinghem
+**Made with ❤️, Swift % Dart** by Adam Vanbaelinghem
