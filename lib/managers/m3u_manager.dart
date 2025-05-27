@@ -65,34 +65,34 @@ class M3UParser {
             ));
           } else if (grouping.contains('SRS')) {
             // Episode
-            final rc = RegExp(r'(.+?)\s[Ss](\d+)[Ee](\d+)', caseSensitive: false);
+            final rc = RegExp(r'(.+?)\s*[Ss](\d+)\s*[Ee](\d+)', caseSensitive: false);
             final match = rc.firstMatch(currentName);
-            final showTitle = match != null
-                ? match.group(1)!.trim()
-                : currentName;
-            final seasonNum = match != null ? match.group(2)! : '1';
-            final seasonKey = 'Season $seasonNum';
+            if (match != null) {
+              final showTitle = match.group(1)!.trim();
+              final seasonNum = match.group(2)!;
+              final seasonKey = 'Season $seasonNum';
 
-            final parts = grouping.split('|');
-            final showCategory = parts.length > 1 ? parts[1].trim() : grouping;
+              final parts = grouping.split('|');
+              final showCategory = parts.length > 1 ? parts[1].trim() : grouping;
 
-            final episode = Episode(
-              title: currentName,
-              url: streamUrl,
-              logo: currentLogo ?? '',
-            );
-
-            if (!showsByTitle.containsKey(showTitle)) {
-              showsByTitle[showTitle] = Show(
-                title: showTitle,
+              final episode = Episode(
+                title: currentName,
+                url: streamUrl,
                 logo: currentLogo ?? '',
-                category: showCategory,
-                seasons: {},
               );
+
+              if (!showsByTitle.containsKey(showTitle)) {
+                showsByTitle[showTitle] = Show(
+                  title: showTitle,
+                  logo: currentLogo ?? '',
+                  category: showCategory,
+                  seasons: {},
+                );
+              }
+              final show = showsByTitle[showTitle]!;
+              show.seasons.putIfAbsent(seasonKey, () => []);
+              show.seasons[seasonKey]!.add(episode);
             }
-            final show = showsByTitle[showTitle]!;
-            show.seasons.putIfAbsent(seasonKey, () => []);
-            show.seasons[seasonKey]!.add(episode);
           } else {
             // Live TV channel
             channelsByGroup.putIfAbsent(grouping, () => []);
