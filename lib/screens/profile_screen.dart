@@ -11,10 +11,10 @@ class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.title = "Whos watching today?"});
 
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  ProfileScreenState createState() => ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class ProfileScreenState extends State<ProfileScreen> {
   final ProfileManager _profileManager = ProfileManager();
   List<Profile> _profiles = [];
   bool _isLoading = true;
@@ -145,7 +145,7 @@ class _ProfileTile extends StatelessWidget {
   final Profile profile;
   final VoidCallback onTap;
 
-  const _ProfileTile({super.key, required this.profile, required this.onTap});
+  const _ProfileTile({required this.profile, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +190,7 @@ class _ProfileTile extends StatelessWidget {
 
 class _AddProfileTile extends StatelessWidget {
   final VoidCallback onTap;
-  const _AddProfileTile({super.key, required this.onTap});
+  const _AddProfileTile({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
