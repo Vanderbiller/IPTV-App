@@ -46,7 +46,6 @@ class _AutoSwipingCarousel extends StatefulWidget {
 
 class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
   late final PageController _pageController;
-  int _currentPage = 1;
   late final List<Movie> _carouselMovies;
   late final Map<String?, List<Movie>> _allMovies;
   @override
@@ -55,7 +54,6 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
     _carouselMovies = widget.carouselMovies;
     _allMovies = widget.allMovies;
     int initial = (_carouselMovies.length > 1) ? 1 : 0;
-    _currentPage = initial;
     _pageController = PageController(viewportFraction: 0.65, initialPage: initial);
   }
 
@@ -74,7 +72,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
           child: PageView.builder(
             controller: _pageController,
             itemCount: _carouselMovies.length,
-            onPageChanged: (i) => setState(() => _currentPage = i),
+            onPageChanged: (i) {},
             itemBuilder: (context, index) {
               final movie = _carouselMovies[index];
               return GestureDetector(
@@ -85,6 +83,8 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                       builder: (_) => VideoPlayerPage(
                         channelUrl: movie.url,
                         title: movie.title,
+                        thumbnailUrl: movie.logo,
+                        category: movie.category,
                       ),
                     ),
                   );
@@ -228,6 +228,8 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
                               builder: (_) => VideoPlayerPage(
                                 channelUrl: movie.url,
                                 title: movie.title,
+                                thumbnailUrl: movie.logo,
+                                category: movie.category,
                               ),
                             ),
                           );
@@ -302,7 +304,7 @@ class _AutoSwipingCarouselState extends State<_AutoSwipingCarousel> {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
