@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:sample_app/models/channel.dart';
-import 'package:sample_app/models/movie.dart';
-import 'package:sample_app/models/show.dart';
+import 'package:avtv/models/channel.dart';
+import 'package:avtv/models/movie.dart';
+import 'package:avtv/models/show.dart';
 import '../managers/m3u_manager.dart';
 import 'channel_groups_screen.dart';
 import 'movies_screen.dart';
 import 'show_screen.dart';
+import 'search_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final String m3uUrl;
@@ -83,11 +84,52 @@ class _MainScreenState extends State<MainScreen> {
       );
     }
 
-    final hasMovies = _moviesByCategory != null && _moviesByCategory!.isNotEmpty;
+    final hasMovies =
+        _moviesByCategory != null && _moviesByCategory!.isNotEmpty;
     final hasShows = _showsByTitle != null && _showsByTitle!.isNotEmpty;
 
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(36),
+        child: AppBar(
+          backgroundColor: Colors.black,
+          surfaceTintColor: Colors.transparent,
+          automaticallyImplyLeading: false,
+          toolbarHeight: 36,
+          title: Row(
+            children: [
+              Image.asset(
+                'assets/images/logo.png',
+                height: 26,
+              ),
+              const Spacer(),
+            ],
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.search, color: Colors.white, size: 26),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SearchScreen(
+                        movies: _moviesByCategory,
+                        channels: _channelsByGroup,
+                        shows: _showsByTitle,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
       bottomNavigationBar: (hasMovies || hasShows)
           ? Container(
               decoration: const BoxDecoration(
@@ -119,13 +161,15 @@ class _MainScreenState extends State<MainScreen> {
                   if (hasMovies)
                     const BottomNavigationBarItem(
                       icon: Icon(Icons.movie_creation_rounded),
-                      activeIcon: Icon(Icons.movie_creation_rounded, color: Colors.redAccent),
+                      activeIcon: Icon(Icons.movie_creation_rounded,
+                          color: Colors.redAccent),
                       label: 'Movies',
                     ),
                   if (hasShows)
                     const BottomNavigationBarItem(
                       icon: Icon(Icons.play_circle_outline_rounded),
-                      activeIcon: Icon(Icons.play_circle_outline_rounded, color: Colors.redAccent),
+                      activeIcon: Icon(Icons.play_circle_outline_rounded,
+                          color: Colors.redAccent),
                       label: 'Shows',
                     ),
                 ],
@@ -147,4 +191,4 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-} 
+}

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sample_app/screens/profile_screen.dart';
+import 'package:avtv/screens/profile_screen.dart';
 
 void main() {
   runApp(const MyIPTVApp());
