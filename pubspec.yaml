@@ -1,5 +1,8 @@
-name: sample_app
-description: "A new Flutter project."
+name: avtv
+description: "AVTV is your ultimate IPTV player for streaming live TV, movies, and shows. 
+  Easily load your M3U playlists and enjoy smooth, high-quality playback with a modern, intuitive interface. 
+  Whether you're watching live sports, global channels, or on-demand content, AVTV brings everything together 
+  in one sleek app. Compatible with IPTV providers and customizable for your experience."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -40,6 +43,7 @@ dependencies:
   shared_preferences: ^2.5.3
   image_picker: ^1.1.2
   path_provider: ^2.1.5
+  google_fonts: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +66,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/images/logo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
