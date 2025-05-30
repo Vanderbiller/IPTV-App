@@ -1,16 +1,28 @@
+
 import UIKit
 import AVKit
 import AVFoundation
+import MobileVLCKit
 
 
-class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
+class ViewController : UIViewController, AVPictureInPictureControllerDelegate, VLCMediaPlayerDelegate {
     
     private var isControlsVisible = true
     private var uiTimer: Timer?
     private var timeObserverToken: Any?
     private var isObservingStatus = false
+    private var isObservingBuffer = false
     
     private var pipController: AVPictureInPictureController?
+    private var vlcPlayer: VLCMediaPlayer?
+    private var vlcUpdateTimer: Timer?
+    private var initialLoad: Bool = false
+    
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
     
     @IBOutlet var videoPlayer: UIView!
     @IBOutlet weak var imgPause: UIImageView! {
@@ -74,6 +86,12 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     override func viewDidLoad() {
         guard let title = mediaTitle else { return }
         super.viewDidLoad()
+        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
+        videoPlayer.addSubview(loadingIndicator)
+        NSLayoutConstraint.activate([
+            loadingIndicator.centerXAnchor.constraint(equalTo: videoPlayer.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: videoPlayer.centerYAnchor)
+        ])
         setupPlayer()
         configureLiveLabel()
         titleLabel.text = title
@@ -133,10 +151,8 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
         DispatchQueue.main.async {
             do {
                 let session = AVAudioSession.sharedInstance()
-                //print("Before setup: category=\(session.category.rawValue)")
                 try session.setCategory(.playback)
                 try session.setActive(true)
-                //print("After setup: category=\(session.category.rawValue)")
             } catch let error as NSError {
                 print("Audio session setup failed: \(error), userInfo: \(error.userInfo)")
             }
@@ -168,13 +184,67 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     private func setupPlayer() {
         guard let url = mediaUrl else {return}
         guard let title = mediaTitle else {return}
+        loadingIndicator.startAnimating()
+        imgPause.isHidden = true
         print(title)
+        if url.pathExtension.lowercased() == "mkv" {
+            playerLayer?.removeFromSuperlayer()
+
+            let mediaPlayer = VLCMediaPlayer()
+            mediaPlayer.drawable = videoPlayer
+            mediaPlayer.media = VLCMedia(url: url)
+            mediaPlayer.delegate = self
+            mediaPlayer.play()
+            loadingIndicator.startAnimating()
+            imgPause.isHidden = true
+
+            self.vlcPlayer = mediaPlayer
+
+            self.liveLabel.isHidden = true
+
+            vlcUpdateTimer?.invalidate()
+            vlcUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+                guard let self = self,
+                      let vlc = self.vlcPlayer,
+                      let media = vlc.media else { return }
+                let lengthMs = media.length.intValue
+                let totalSec = Double(max(lengthMs, 0)) / 1000.0
+                let currentSec = Double(vlc.position) * totalSec
+                let remaining = totalSec - currentSec
+                self.seekSlider.isHidden = false
+                self.img10Back.isHidden = false
+                self.img10Fwd.isHidden = false
+                self.liveLabel.isHidden = true
+                self.airplayPicker.isHidden = true
+                self.seekSlider.maximumValue = Float(totalSec)
+                self.seekSlider.value = Float(currentSec)
+                self.timeLabel.text = self.formatTime(remaining)
+            }
+
+            img10Back.isHidden = false
+            img10Back.isUserInteractionEnabled = true
+            img10Fwd.isHidden = false
+            img10Fwd.isUserInteractionEnabled = true
+            seekSlider.isHidden = false
+            timeLabel.isHidden = false
+
+            return
+        }
         player = AVPlayer(url: url)
         player?.currentItem?.addObserver(self,
                                          forKeyPath: "status",
                                          options: [.initial, .new],
                                          context: nil)
         isObservingStatus = true
+        player?.currentItem?.addObserver(self,
+                                         forKeyPath: "playbackBufferEmpty",
+                                         options: [.new],
+                                         context: nil)
+        player?.currentItem?.addObserver(self,
+                                         forKeyPath: "playbackLikelyToKeepUp",
+                                         options: [.new],
+                                         context: nil)
+        isObservingBuffer = true
         playerLayer = AVPlayerLayer(player: player)
         playerLayer?.videoGravity = .resizeAspect
         if let layer = playerLayer {
@@ -186,6 +256,8 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
             }
         }
         player?.play()
+        loadingIndicator.startAnimating()
+        imgPause.isHidden = true
         let interval = CMTime(seconds: 1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         timeObserverToken = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self,
@@ -306,6 +378,16 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     
     // MARK: - Video Controls
     @objc private func togglePlayPause() {
+        if let vlc = vlcPlayer {
+            if vlc.isPlaying {
+                vlc.pause()
+                imgPause.image = UIImage(systemName: "play.fill")
+            } else {
+                vlc.play()
+                imgPause.image = UIImage(systemName: "pause.fill")
+            }
+            return
+        }
         guard let player = player else { return }
         if player.timeControlStatus == .playing {
             player.pause()
@@ -317,6 +399,15 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     }
 
     @objc private func backwardTenSeconds() {
+        if let vlc = vlcPlayer, let media = vlc.media {
+            let lengthMs = media.length.intValue
+            if lengthMs > 0 {
+                let totalSec = Float(lengthMs) / 1000
+                let newPos = max(vlc.position - (10 / totalSec), 0)
+                vlc.position = newPos
+            }
+            return
+        }
         guard let player = player else { return }
         let currentTime = player.currentTime()
         let tenSeconds = CMTime(seconds: 10, preferredTimescale: currentTime.timescale)
@@ -326,6 +417,15 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     }
     
     @objc private func forwardTenSeconds() {
+        if let vlc = vlcPlayer, let media = vlc.media {
+            let lengthMs = media.length.intValue
+            if lengthMs > 0 {
+                let totalSec = Float(lengthMs) / 1000
+                let newPos = min(vlc.position + (10 / totalSec), 1)
+                vlc.position = newPos
+            }
+            return
+        }
         guard let player = player else { return }
         let currentTime = player.currentTime()
         let tenSeconds = CMTime(seconds: 10, preferredTimescale: currentTime.timescale)
@@ -335,24 +435,70 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     }
     
     @IBAction func sliderValueChanged(_ sender: UISlider) {
+        if let vlc = vlcPlayer, let media = vlc.media {
+            let lengthMs = media.length.intValue
+            if lengthMs > 0 {
+                let totalSec = Float(lengthMs) / 1000
+                vlc.position = sender.value / totalSec
+                let currentSec = Double(sender.value)
+                let remaining = Double(totalSec) - currentSec
+                timeLabel.text = formatTime(remaining)
+            }
+            return
+        }
         let seconds = Double(sender.value)
         let targetTime = CMTime(seconds: seconds, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         player?.seek(to: targetTime)
     }
     
     @objc private func dismissPlayer() {
-        player?.pause()
+        if let vlc = vlcPlayer {
+            vlc.stop()
+            vlcPlayer = nil
+            vlcUpdateTimer?.invalidate()
+            vlcUpdateTimer = nil
+        } else {
+            player?.pause()
+        }
         dismiss(animated: true, completion: nil)
     }
     
     // MARK: - SeekerSlider View Logic
     @IBAction func sliderTouchStarted(_ sender: UISlider) {
         uiTimer?.invalidate()
+        if let vlc = vlcPlayer {
+            vlcUpdateTimer?.invalidate()
+            vlc.pause()
+            return
+        }
         player?.pause()
     }
 
     @IBAction func sliderTouchEnded(_ sender: UISlider) {
         startUITimer()
+        if let vlc = vlcPlayer {
+            vlcUpdateTimer?.invalidate()
+            vlcUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+                guard let self = self,
+                      let vlc = self.vlcPlayer,
+                      let media = vlc.media else { return }
+                let lengthMs = media.length.intValue
+                let totalSec = Double(max(lengthMs, 0)) / 1000.0
+                let currentSec = Double(vlc.position) * totalSec
+                let remaining = totalSec - currentSec
+                
+                self.seekSlider.isHidden = false
+                self.img10Back.isHidden = false
+                self.img10Fwd.isHidden = false
+                self.liveLabel.isHidden = true
+
+                self.seekSlider.maximumValue = Float(totalSec)
+                self.seekSlider.value = Float(currentSec)
+                self.timeLabel.text = self.formatTime(remaining)
+            }
+            vlc.play()
+            return
+        }
         player?.play()
     }
      
@@ -389,18 +535,15 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
            let item = object as? AVPlayerItem,
            item == player?.currentItem,
            item.status == .readyToPlay {
-            // Determine if it's live or VOD
             let duration = item.duration
             DispatchQueue.main.async {
                 if duration.isIndefinite {
-                    // Live stream: hide seeker, show LIVE badge
                     self.img10Back.isHidden = true
                     self.img10Fwd.isHidden = true
                     self.seekSlider.isHidden = true
                     self.timeLabel.isHidden = true
                     self.liveLabel.isHidden = false
                 } else {
-                    // VOD: show seeker and controls, hide LIVE badge
                     self.img10Back.isHidden = false
                     self.img10Back.isUserInteractionEnabled = true
                     self.img10Fwd.isHidden = false
@@ -409,12 +552,21 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
                     self.timeLabel.isHidden = false
                     self.liveLabel.isHidden = true
                 }
-                // Restart auto-hide timer
+                self.loadingIndicator.stopAnimating()
+                self.imgPause.isHidden = false
                 self.startUITimer()
             }
-            // Remove observer after ready
             item.removeObserver(self, forKeyPath: "status")
             isObservingStatus = false
+        }
+        DispatchQueue.main.async {
+            if keyPath == "playbackBufferEmpty" {
+                self.loadingIndicator.startAnimating()
+                return
+            } else if keyPath == "playbackLikelyToKeepUp" {
+                self.loadingIndicator.stopAnimating()
+                return
+            }
         }
     }
     
@@ -427,13 +579,30 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     }
     
     deinit {
+        vlcUpdateTimer?.invalidate()
+        vlcUpdateTimer = nil
+        vlcPlayer?.stop()
+        vlcPlayer = nil
         if let token = timeObserverToken {
             player?.removeTimeObserver(token)
         }
         if isObservingStatus {
             player?.currentItem?.removeObserver(self, forKeyPath: "status")
         }
+        if isObservingBuffer {
+            player?.currentItem?.removeObserver(self, forKeyPath: "playbackBufferEmpty")
+            player?.currentItem?.removeObserver(self, forKeyPath: "playbackLikelyToKeepUp")
+        }
         NotificationCenter.default.removeObserver(self, name: UIApplication.willResignActiveNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIApplication.didBecomeActiveNotification, object: nil)
+    }
+
+    // MARK: - VLCMediaPlayerDelegate
+    func mediaPlayerStateChanged(_ aNotification: Notification) {
+        if vlcPlayer?.state == .playing && !initialLoad {
+            initialLoad = true
+            loadingIndicator.stopAnimating()
+            imgPause.isHidden = false
+        }
     }
 }
