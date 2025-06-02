@@ -2,10 +2,9 @@
 import UIKit
 import AVKit
 import AVFoundation
-import MobileVLCKit
 
 
-class ViewController : UIViewController, AVPictureInPictureControllerDelegate, VLCMediaPlayerDelegate {
+class ViewController : UIViewController, AVPictureInPictureControllerDelegate {
     
     private var isControlsVisible = true
     private var uiTimer: Timer?
@@ -14,9 +13,6 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     private var isObservingBuffer = false
     
     private var pipController: AVPictureInPictureController?
-    private var vlcPlayer: VLCMediaPlayer?
-    private var vlcUpdateTimer: Timer?
-    private var initialLoad: Bool = false
     
     private let loadingIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
@@ -63,6 +59,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     private var playerLayer: AVPlayerLayer?
     private var mediaUrl: URL?
     private var mediaTitle: String?
+
 
     
     private let liveLabel: UILabel = {
@@ -182,55 +179,22 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     }
     
     private func setupPlayer() {
-        guard let url = mediaUrl else {return}
-        guard let title = mediaTitle else {return}
+        guard let url = mediaUrl else { return }
+        guard let title = mediaTitle else { return }
         loadingIndicator.startAnimating()
         imgPause.isHidden = true
         print(title)
+
+        // --- MKV handling via transcode server ---
+        var playURL = url
         if url.pathExtension.lowercased() == "mkv" {
-            playerLayer?.removeFromSuperlayer()
-
-            let mediaPlayer = VLCMediaPlayer()
-            mediaPlayer.drawable = videoPlayer
-            mediaPlayer.media = VLCMedia(url: url)
-            mediaPlayer.delegate = self
-            mediaPlayer.play()
-            loadingIndicator.startAnimating()
-            imgPause.isHidden = true
-
-            self.vlcPlayer = mediaPlayer
-
-            self.liveLabel.isHidden = true
-
-            vlcUpdateTimer?.invalidate()
-            vlcUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
-                guard let self = self,
-                      let vlc = self.vlcPlayer,
-                      let media = vlc.media else { return }
-                let lengthMs = media.length.intValue
-                let totalSec = Double(max(lengthMs, 0)) / 1000.0
-                let currentSec = Double(vlc.position) * totalSec
-                let remaining = totalSec - currentSec
-                self.seekSlider.isHidden = false
-                self.img10Back.isHidden = false
-                self.img10Fwd.isHidden = false
-                self.liveLabel.isHidden = true
-                self.airplayPicker.isHidden = true
-                self.seekSlider.maximumValue = Float(totalSec)
-                self.seekSlider.value = Float(currentSec)
-                self.timeLabel.text = self.formatTime(remaining)
+            if let encodedSrc = url.absoluteString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+               let transcodeURL = URL(string: "http://10.0.0.143:8000/hls?src=\(encodedSrc)&seek=0") {
+                playURL = transcodeURL
             }
-
-            img10Back.isHidden = false
-            img10Back.isUserInteractionEnabled = true
-            img10Fwd.isHidden = false
-            img10Fwd.isUserInteractionEnabled = true
-            seekSlider.isHidden = false
-            timeLabel.isHidden = false
-
-            return
         }
-        player = AVPlayer(url: url)
+
+        player = AVPlayer(url: playURL)
         player?.currentItem?.addObserver(self,
                                          forKeyPath: "status",
                                          options: [.initial, .new],
@@ -249,7 +213,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
         playerLayer?.videoGravity = .resizeAspect
         if let layer = playerLayer {
             videoPlayer.layer.insertSublayer(layer, at: 0)
-            
+
             if AVPictureInPictureController.isPictureInPictureSupported(), let layer = playerLayer {
                 pipController = AVPictureInPictureController(playerLayer: layer)
                 pipController?.delegate = self
@@ -365,7 +329,11 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     }
     
     private func formatTime(_ seconds: Double) -> String {
-        let intSec = Int(seconds)
+        // Protect against NaN, ±∞, and negative values coming from the player
+        guard seconds.isFinite, !seconds.isNaN, seconds >= 0 else {
+            return "00:00"
+        }
+        let intSec = Int(seconds.rounded())
         let hrs = intSec / 3600
         let mins = (intSec % 3600) / 60
         let secs = intSec % 60
@@ -378,16 +346,6 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     
     // MARK: - Video Controls
     @objc private func togglePlayPause() {
-        if let vlc = vlcPlayer {
-            if vlc.isPlaying {
-                vlc.pause()
-                imgPause.image = UIImage(systemName: "play.fill")
-            } else {
-                vlc.play()
-                imgPause.image = UIImage(systemName: "pause.fill")
-            }
-            return
-        }
         guard let player = player else { return }
         if player.timeControlStatus == .playing {
             player.pause()
@@ -399,15 +357,6 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     }
 
     @objc private func backwardTenSeconds() {
-        if let vlc = vlcPlayer, let media = vlc.media {
-            let lengthMs = media.length.intValue
-            if lengthMs > 0 {
-                let totalSec = Float(lengthMs) / 1000
-                let newPos = max(vlc.position - (10 / totalSec), 0)
-                vlc.position = newPos
-            }
-            return
-        }
         guard let player = player else { return }
         let currentTime = player.currentTime()
         let tenSeconds = CMTime(seconds: 10, preferredTimescale: currentTime.timescale)
@@ -417,15 +366,6 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     }
     
     @objc private func forwardTenSeconds() {
-        if let vlc = vlcPlayer, let media = vlc.media {
-            let lengthMs = media.length.intValue
-            if lengthMs > 0 {
-                let totalSec = Float(lengthMs) / 1000
-                let newPos = min(vlc.position + (10 / totalSec), 1)
-                vlc.position = newPos
-            }
-            return
-        }
         guard let player = player else { return }
         let currentTime = player.currentTime()
         let tenSeconds = CMTime(seconds: 10, preferredTimescale: currentTime.timescale)
@@ -435,70 +375,27 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     }
     
     @IBAction func sliderValueChanged(_ sender: UISlider) {
-        if let vlc = vlcPlayer, let media = vlc.media {
-            let lengthMs = media.length.intValue
-            if lengthMs > 0 {
-                let totalSec = Float(lengthMs) / 1000
-                vlc.position = sender.value / totalSec
-                let currentSec = Double(sender.value)
-                let remaining = Double(totalSec) - currentSec
-                timeLabel.text = formatTime(remaining)
-            }
-            return
-        }
         let seconds = Double(sender.value)
         let targetTime = CMTime(seconds: seconds, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         player?.seek(to: targetTime)
     }
     
     @objc private func dismissPlayer() {
-        if let vlc = vlcPlayer {
-            vlc.stop()
-            vlcPlayer = nil
-            vlcUpdateTimer?.invalidate()
-            vlcUpdateTimer = nil
-        } else {
-            player?.pause()
-        }
+        player?.pause()
         dismiss(animated: true, completion: nil)
     }
     
     // MARK: - SeekerSlider View Logic
     @IBAction func sliderTouchStarted(_ sender: UISlider) {
         uiTimer?.invalidate()
-        if let vlc = vlcPlayer {
-            vlcUpdateTimer?.invalidate()
-            vlc.pause()
-            return
-        }
         player?.pause()
     }
 
     @IBAction func sliderTouchEnded(_ sender: UISlider) {
         startUITimer()
-        if let vlc = vlcPlayer {
-            vlcUpdateTimer?.invalidate()
-            vlcUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
-                guard let self = self,
-                      let vlc = self.vlcPlayer,
-                      let media = vlc.media else { return }
-                let lengthMs = media.length.intValue
-                let totalSec = Double(max(lengthMs, 0)) / 1000.0
-                let currentSec = Double(vlc.position) * totalSec
-                let remaining = totalSec - currentSec
-                
-                self.seekSlider.isHidden = false
-                self.img10Back.isHidden = false
-                self.img10Fwd.isHidden = false
-                self.liveLabel.isHidden = true
-
-                self.seekSlider.maximumValue = Float(totalSec)
-                self.seekSlider.value = Float(currentSec)
-                self.timeLabel.text = self.formatTime(remaining)
-            }
-            vlc.play()
-            return
-        }
+        let seconds = Double(sender.value)
+        let targetTime = CMTime(seconds: seconds, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        player?.seek(to: targetTime)
         player?.play()
     }
      
@@ -579,10 +476,6 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     }
     
     deinit {
-        vlcUpdateTimer?.invalidate()
-        vlcUpdateTimer = nil
-        vlcPlayer?.stop()
-        vlcPlayer = nil
         if let token = timeObserverToken {
             player?.removeTimeObserver(token)
         }
@@ -597,12 +490,4 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
         NotificationCenter.default.removeObserver(self, name: UIApplication.didBecomeActiveNotification, object: nil)
     }
 
-    // MARK: - VLCMediaPlayerDelegate
-    func mediaPlayerStateChanged(_ aNotification: Notification) {
-        if vlcPlayer?.state == .playing && !initialLoad {
-            initialLoad = true
-            loadingIndicator.stopAnimating()
-            imgPause.isHidden = false
-        }
-    }
 }
