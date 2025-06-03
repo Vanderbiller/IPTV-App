@@ -27,6 +27,7 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfiles() async {
     final list = await _profileManager.getProfiles();
+    if (!mounted) return;
     setState(() {
       _profiles = list;
       _isLoading = false;

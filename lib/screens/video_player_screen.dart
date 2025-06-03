@@ -45,9 +45,11 @@ class VideoPlayerPageState extends State<VideoPlayerPage> {
       if (kDebugMode) {
         print("Failed to play video: '${e.message}'.");
       }
-      setState(() {
-        _errorMessage = e.message;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.message;
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {

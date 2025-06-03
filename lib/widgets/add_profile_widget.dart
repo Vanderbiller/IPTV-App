@@ -45,9 +45,11 @@ Future<void> _pickImage() async {
     },
   );
 
+  if (!mounted) return;
+
   if (source != null) {
     final image = await picker.pickImage(source: source);
-    if (image != null) {
+    if (image != null && mounted) {
       setState(() {
         _imagePath = image.path;
       });
