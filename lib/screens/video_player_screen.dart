@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:avtv/managers/video_manager.dart';
 
 class VideoPlayerPage extends StatefulWidget {
   final String channelUrl;
@@ -26,21 +27,40 @@ class VideoPlayerPage extends StatefulWidget {
 }
 
 class VideoPlayerPageState extends State<VideoPlayerPage> {
-  static const platform = MethodChannel('video_player_channel');
   bool _isLoading = false;
   String? _errorMessage;
+  double _lastPosition = 0.0;
 
-  Future<void> _playVideo(String videoUrl, String title) async {
+  @override
+  void initState() {
+    super.initState();
+    _loadLastPosition();
+    VideoManager.registerPositionUpdateHandler((url, newPos) {
+      if (mounted && url == widget.channelUrl) {
+        setState(() {
+          _lastPosition = newPos;
+        });
+      }
+    });
+  }
+
+  Future<void> _loadLastPosition() async {
+    final position = await VideoManager.loadLastPosition(widget.channelUrl);
+    if (mounted) {
+      setState(() {
+        _lastPosition = position;
+      });
+    }
+  }
+
+  Future<void> _playVideo(String videoUrl, String title, {double startPoint = 0}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      await platform.invokeMethod('playVideo', {
-        'url': videoUrl,
-        'title': title
-      });
+      await VideoManager.playVideo(videoUrl, title, startPoint: startPoint);
     } on PlatformException catch (e) {
       if (kDebugMode) {
         print("Failed to play video: '${e.message}'.");
@@ -147,6 +167,23 @@ class VideoPlayerPageState extends State<VideoPlayerPage> {
                 ],
               ),
             ),
+            if (_lastPosition > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () => _playVideo(widget.channelUrl, widget.title, startPoint: _lastPosition),
+                      child: const Text('Resume'),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () => _playVideo(widget.channelUrl, widget.title),
+                      child: const Text('Start Over'),
+                    ),
+                  ],
+                ),
+              ),
             // Video Information
             Padding(
               padding: const EdgeInsets.all(16),

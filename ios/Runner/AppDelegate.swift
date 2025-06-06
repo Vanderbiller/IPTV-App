@@ -24,8 +24,9 @@ import UIKit
                 guard let args = call.arguments as? [String: Any],
                     let urlString = args["url"] as? String,
                     let url = URL(string: urlString),
-                    let title = args["title"] as? String
-                else {
+                    let title = args["title"] as? String,
+                    let startPoint = args["startPoint"] as? Double
+                 else {
                     result(
                         FlutterError(
                             code: "INVALID_ARGUMENT",
@@ -34,7 +35,7 @@ import UIKit
                         ))
                     return
                 }
-                self?.presentVideoPlayer(with: url, with: title)
+                self?.presentVideoPlayer(with: url, with: title, with: startPoint)
                 result(nil)
             } else {
                 result(FlutterMethodNotImplemented)
@@ -44,7 +45,7 @@ import UIKit
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
 
-    private func presentVideoPlayer(with url: URL, with title: String) {
+    private func presentVideoPlayer(with url: URL, with title: String, with startPoint: Double) {
         guard
             let windowScene = UIApplication.shared.connectedScenes
                 .compactMap({ $0 as? UIWindowScene })
@@ -64,7 +65,7 @@ import UIKit
             return
         }
 
-        playerVC.configure(with: url, with: title)
+        playerVC.configure(with: url, with: title, with: startPoint)
         playerVC.modalPresentationStyle = .fullScreen
         rootVC.present(playerVC, animated: true, completion: nil)
     }

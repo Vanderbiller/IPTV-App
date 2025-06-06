@@ -63,6 +63,9 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     private var playerLayer: AVPlayerLayer?
     private var mediaUrl: URL?
     private var mediaTitle: String?
+    private var mediaStartPoint: Double?
+
+    private var flutterChannel: FlutterMethodChannel?
 
     
     private let liveLabel: UILabel = {
@@ -78,14 +81,22 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
         return label
     }()
         
-    func configure(with url: URL, with title: String) {
+    func configure(with url: URL, with title: String, with startPoint: Double) {
         mediaUrl = url
         mediaTitle = title
+        mediaStartPoint = startPoint
     }
     
     override func viewDidLoad() {
         guard let title = mediaTitle else { return }
         super.viewDidLoad()
+        if let appDelegate = UIApplication.shared.delegate as? AppDelegate,
+           let controller = appDelegate.window?.rootViewController as? FlutterViewController {
+            flutterChannel = FlutterMethodChannel(
+                name: "video_player_channel",
+                binaryMessenger: controller.binaryMessenger
+            )
+        }
         loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
         videoPlayer.addSubview(loadingIndicator)
         NSLayoutConstraint.activate([
@@ -169,6 +180,11 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
             object: nil)
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        savePlaybackPositionIfNeeded()
+    }
+
     
     private func configureLiveLabel() {
         videoPlayer.addSubview(liveLabel)
@@ -195,6 +211,14 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
             mediaPlayer.media = VLCMedia(url: url)
             mediaPlayer.delegate = self
             mediaPlayer.play()
+            if let startPoint = mediaStartPoint, startPoint > 0,
+               let lengthMs = mediaPlayer.media?.length.intValue, lengthMs > 0 {
+                let totalSec = Double(lengthMs) / 1000.0
+                if totalSec > 0 {
+                    let fraction = startPoint / totalSec
+                    mediaPlayer.position = Float(fraction)
+                }
+            }
             loadingIndicator.startAnimating()
             imgPause.isHidden = true
 
@@ -231,6 +255,9 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
             return
         }
         player = AVPlayer(url: url)
+        if (mediaStartPoint != 0) {
+            player?.seek(to: CMTime(seconds: mediaStartPoint!, preferredTimescale: 1000))
+        }
         player?.currentItem?.addObserver(self,
                                          forKeyPath: "status",
                                          options: [.initial, .new],
@@ -255,7 +282,10 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
                 pipController?.delegate = self
             }
         }
+
+
         player?.play()
+
         loadingIndicator.startAnimating()
         imgPause.isHidden = true
         let interval = CMTime(seconds: 1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
@@ -451,7 +481,68 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
         player?.seek(to: targetTime)
     }
     
+    private func savePlaybackPositionIfNeeded() {
+        //Save timestamp on exit
+        if let vlc = vlcPlayer, let media = vlc.media {
+            let lengthMs = media.length.intValue
+            if lengthMs > 0, let urlString = mediaUrl?.absoluteString {
+                let totalSec = Double(lengthMs) / 1000.0
+                let currentSec = Double(vlc.position) * totalSec
+                let remainingSec = totalSec - currentSec
+                let remainingRatio = remainingSec / totalSec
+
+                let key = "lastPos__\(urlString)"
+                if remainingRatio > 0.02 {
+                    UserDefaults.standard.set(currentSec, forKey: key)
+                    flutterChannel?.invokeMethod(
+                        "positionUpdated",
+                        arguments: ["url": urlString, "position": currentSec]
+                    )
+                    print("Saved position \(currentSec) for \(urlString)")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: key)
+                    flutterChannel?.invokeMethod(
+                        "positionUpdated",
+                        arguments: ["url": urlString, "position": 0.0]
+                    )
+                    print("Removed saved position for \(urlString)")
+                }
+            }
+        }
+        else if let player = player, let urlString = mediaUrl?.absoluteString,
+                let currentItem = player.currentItem, currentItem.duration.isNumeric {
+            let durationCM = currentItem.duration
+            let totalSec = durationCM.seconds
+            let currentCM = player.currentTime()
+            let currentSec = CMTimeGetSeconds(currentCM).isFinite
+                           ? CMTimeGetSeconds(currentCM)
+                           : 0.0
+            let remainingSec = totalSec - currentSec
+            let remainingRatio = (totalSec > 0) ? (remainingSec / totalSec) : 0.0
+
+            let key = "lastPos__\(urlString)"
+            if remainingRatio > 0.02 {
+                UserDefaults.standard.set(currentSec, forKey: key)
+                flutterChannel?.invokeMethod(
+                    "positionUpdated",
+                    arguments: ["url": urlString, "position": currentSec]
+                )
+                print("Saved position \(currentSec) for \(urlString)")
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+                flutterChannel?.invokeMethod(
+                    "positionUpdated",
+                    arguments: ["url": urlString, "position": 0.0]
+                )
+                print("Removed saved position for \(urlString)")
+            }
+            print("★ ALL UserDefaults keys now: \(UserDefaults.standard.dictionaryRepresentation().keys.sorted())")
+        }
+    }
+
     @objc private func dismissPlayer() {
+        savePlaybackPositionIfNeeded()
+        //Handle Dismiss
         if let vlc = vlcPlayer {
             vlc.stop()
             vlcPlayer = nil
@@ -571,6 +662,7 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
     }
     
     @objc private func handleWillResignActive() {
+        savePlaybackPositionIfNeeded()
         pipController?.startPictureInPicture()
     }
     
@@ -604,5 +696,9 @@ class ViewController : UIViewController, AVPictureInPictureControllerDelegate, V
             loadingIndicator.stopAnimating()
             imgPause.isHidden = false
         }
+    }
+
+    func pictureInPictureControllerDidStopPictureInPicture(_ pipController: AVPictureInPictureController) {
+        savePlaybackPositionIfNeeded()
     }
 }
